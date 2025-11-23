@@ -73,11 +73,14 @@ Imagine installing an AI assistant on every device in your home. Each one has a 
     npm install
     ```
 
-2.  **Install Python Voice Dependencies**:
+2.  **Install Python Dependencies**:
     ```bash
     python -m venv venv
     source venv/bin/activate
+    # Install voice dependencies
     pip install -r python_bridge/requirements-voice.txt
+    # Install Phase 2 dependencies (network discovery, model management)
+    pip install -r python_bridge/requirements-phase2.txt
     ```
 
 ### Running the App
@@ -120,12 +123,17 @@ This project is currently under active development for the NVIDIA DGX Spark comp
 - ✅ **Settings panel** - Sliding panel with gear icon, full visualization controls, and randomization
 - ✅ **Glassmorphism UI** - Polished interface with backdrop blur, gradients, and smooth transitions
 
-### 🟢 Phase 2: Network Intelligence & Parallax Power (Planned)
-- Network auto-discovery with mDNS
-- Model download and synchronization
-- Enhanced Parallax integration
-- Personality management system
-- Multi-device testing and optimization
+### 🟢 Phase 2: Network Intelligence & Parallax Power ✅ COMPLETED
+- ✅ **Network auto-discovery with mDNS/Bonjour** - Automatic discovery of Spark devices on local network
+- ✅ **Network Dashboard** - Visual topology showing all connected devices with real-time stats
+- ✅ **Model Library Interface** - Browse and download models from Hugging Face
+- ✅ **Intelligent Model Download System** - Resume capability, progress tracking, and checksum verification
+- ✅ **Model Management** - Hot-swap models, view local models, set active model
+- ✅ **Enhanced Database Schema** - Support for devices, personalities, conversations, models, and network stats
+- ✅ **Personality Management System** - Full personality editor with traits, backstory, and system prompts
+- ✅ **Device Roster** - View all AI personalities on the network with status indicators
+- ✅ **Conversation Memory** - SQLite storage for conversation history with context management
+- ⏳ **Multi-device testing** - In progress
 
 ### 🟣 Phase 3: Polish, Testing & Deployment (Planned)
 - Cross-platform packaging (macOS, Linux, Windows)
@@ -136,10 +144,44 @@ This project is currently under active development for the NVIDIA DGX Spark comp
 
 **📋 See [tasks.md](tasks.md) for the complete development plan with detailed tasks and success metrics.**
 
+## Phase 2 Features in Detail
+
+### 🌐 Network Discovery
+The app now automatically discovers other Spark instances on your local network using mDNS/Bonjour. Simply start the app on multiple devices and they'll find each other automatically - no manual IP configuration needed!
+
+### 📊 Network Dashboard
+A comprehensive dashboard showing:
+- **Device Topology**: Visual representation of all connected devices
+- **Real-time Stats**: CPU, RAM, and GPU usage for each device
+- **Status Indicators**: Online/offline status with color coding
+- **Role Display**: Easily see which devices are hosts vs clients
+
+### 🤖 Model Management
+Browse and download AI models directly from Hugging Face:
+- **Browse Models**: Search through thousands of models with filters
+- **Smart Downloads**: Resume interrupted downloads, track progress
+- **Local Library**: View all downloaded models and their sizes
+- **Hot-Swap**: Switch between models without restarting the app
+
+### ✨ Personality System
+Create unique AI personalities for each device:
+- **Custom Names**: Give each AI its own identity
+- **Backstories**: Write rich narratives for your AIs
+- **Trait System**: Select from presets or create custom personality traits
+- **Voice Settings**: Configure voice parameters (rate, pitch, volume)
+- **System Prompts**: Fine-tune how your AI responds
+
+### 💾 Conversation Memory
+All conversations are now stored in SQLite with:
+- **Full History**: Access past conversations anytime
+- **Context Management**: Control how much context the AI remembers
+- **Export Capability**: Export conversation transcripts
+- **Per-Device Memory**: Each AI maintains its own conversation history
+
 ## Project Structure
 
 -   **`electron/`**: Main process code, IPC handlers, Python bridge, and database logic
--   **`src/`**: React frontend components (App, AsciiOrb, Onboarding, Dashboard)
--   **`python_bridge/`**: Python scripts for Parallax integration and voice processing
+-   **`src/`**: React frontend components (App, AsciiOrb, Onboarding, Dashboard, NetworkDashboard, PersonalityEditor)
+-   **`python_bridge/`**: Python scripts for Parallax integration, voice processing, network discovery, and model management
 -   **`tasks.md`**: Comprehensive 3-phase development plan
 

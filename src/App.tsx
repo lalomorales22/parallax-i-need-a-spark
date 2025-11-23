@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import AsciiOrb from './components/AsciiOrb';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
+import NetworkDashboard from './components/NetworkDashboard';
+import PersonalityEditor from './components/PersonalityEditor';
 import SettingsPanel from './components/SettingsPanel';
 import type { VisualizationSettings, WaveType, SymmetryMode, CharacterSet, ColorPreset } from './types/visualization';
 import { defaultVisualizationSettings } from './types/visualization';
@@ -13,8 +15,11 @@ function App() {
   const [isSetup, setIsSetup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showNetworkDashboard, setShowNetworkDashboard] = useState(false);
+  const [showPersonalityEditor, setShowPersonalityEditor] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [vizSettings, setVizSettings] = useState<VisualizationSettings>(defaultVisualizationSettings);
+  const [currentDeviceId, setCurrentDeviceId] = useState('');
 
   useEffect(() => {
     // Check if setup is complete
@@ -30,7 +35,10 @@ function App() {
         setIsSetup(true);
         // Load name
         window.ipcRenderer.getSetting('assistant_name').then((name) => {
-          if (name) setAssistantName(name);
+          if (name) {
+            setAssistantName(name);
+            setCurrentDeviceId(name); // Use assistant name as device ID
+          }
         });
 
         // Load visualization settings
@@ -294,37 +302,119 @@ function App() {
         ⚙️
       </button>
 
-      {/* Dashboard Toggle */}
-      <button
-        onClick={() => setShowDashboard(true)}
-        style={{
-          position: 'absolute',
-          top: '25px',
-          left: '20px',
-          background: 'rgba(0, 255, 204, 0.1)',
-          border: '1px solid #00ffcc',
-          borderRadius: '6px',
-          color: '#00ffcc',
-          fontSize: '11px',
-          cursor: 'pointer',
-          padding: '6px 12px',
-          zIndex: 10,
-          transition: 'all 0.3s',
-          boxShadow: '0 0 10px rgba(0, 255, 204, 0.2)'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(0, 255, 204, 0.2)';
-          e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 204, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(0, 255, 204, 0.1)';
-          e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 204, 0.2)';
-        }}
-      >
-        📊 DASHBOARD
-      </button>
+      {/* Dashboard Buttons */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        left: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        zIndex: 10
+      }}>
+        <button
+          onClick={() => setShowNetworkDashboard(true)}
+          style={{
+            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 255, 204, 0.3))',
+            border: '1px solid #00ffcc',
+            borderRadius: '8px',
+            color: '#00ffcc',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            padding: '10px 16px',
+            transition: 'all 0.3s',
+            boxShadow: '0 0 15px rgba(0, 255, 204, 0.3)',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
+            e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 204, 0.5)';
+            e.currentTarget.style.transform = 'translateX(5px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 255, 204, 0.3))';
+            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.3)';
+            e.currentTarget.style.transform = 'translateX(0)';
+          }}
+        >
+          🌐 Network
+        </button>
+
+        <button
+          onClick={() => setShowPersonalityEditor(true)}
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.3))',
+            border: '1px solid #ff00ff',
+            borderRadius: '8px',
+            color: '#ff00ff',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            padding: '10px 16px',
+            transition: 'all 0.3s',
+            boxShadow: '0 0 15px rgba(255, 0, 255, 0.3)',
+            textTransform: 'uppercase',
+            letterSpacing: '1px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(255, 0, 255, 0.4))';
+            e.currentTarget.style.boxShadow = '0 0 25px rgba(255, 0, 255, 0.5)';
+            e.currentTarget.style.transform = 'translateX(5px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.3))';
+            e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 0, 255, 0.3)';
+            e.currentTarget.style.transform = 'translateX(0)';
+          }}
+        >
+          ✨ Personality
+        </button>
+
+        <button
+          onClick={() => setShowDashboard(true)}
+          style={{
+            background: 'rgba(0, 255, 204, 0.1)',
+            border: '1px solid rgba(0, 255, 204, 0.3)',
+            borderRadius: '8px',
+            color: '#00ffcc',
+            fontSize: '11px',
+            cursor: 'pointer',
+            padding: '8px 14px',
+            transition: 'all 0.3s',
+            boxShadow: '0 0 10px rgba(0, 255, 204, 0.2)',
+            opacity: 0.7
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 255, 204, 0.2)';
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 204, 0.4)';
+            e.currentTarget.style.opacity = '1';
+            e.currentTarget.style.transform = 'translateX(5px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(0, 255, 204, 0.1)';
+            e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 204, 0.2)';
+            e.currentTarget.style.opacity = '0.7';
+            e.currentTarget.style.transform = 'translateX(0)';
+          }}
+        >
+          📊 Logs
+        </button>
+      </div>
 
       {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} logs={logs} />}
+      {showNetworkDashboard && <NetworkDashboard onClose={() => setShowNetworkDashboard(false)} />}
+      {showPersonalityEditor && (
+        <PersonalityEditor
+          deviceId={currentDeviceId}
+          onClose={() => setShowPersonalityEditor(false)}
+          onSave={() => {
+            // Reload personality or update UI
+            console.log('Personality saved!');
+          }}
+        />
+      )}
       <SettingsPanel
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}

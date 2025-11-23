@@ -1,0 +1,17 @@
+# Phase 2: Network Discovery & Intelligence
+zeroconf>=0.131.0  # mDNS/Bonjour for network discovery
+psutil>=5.9.0  # System resource monitoring (CPU, RAM, GPU)
+huggingface-hub>=0.20.0  # Model downloads from Hugging Face
+tqdm>=4.66.0  # Progress bars for downloads
+requests>=2.31.0  # HTTP requests
+aiohttp>=3.9.0  # Async HTTP for better performance
+
+# Voice system enhancements
+faster-whisper>=0.10.0  # Faster STT
+pyttsx3>=2.90  # Local TTS alternative
+
+# Existing voice dependencies
+SpeechRecognition
+pyaudio
+edge-tts
+pygame
