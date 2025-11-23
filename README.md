@@ -1,14 +1,34 @@
 # Parallax "I Need a Spark" Voice Assistant
+## 🎯 NVIDIA DGX Spark Competition Entry
+
+> **Transform your home network into a distributed AI powerhouse. Each device gets its own personality, but they all share the same brain.**
 
 ## Overview
-**"I Need a Spark"** is a distributed, voice-activated AI assistant built for the Parallax Hackathon. It leverages the power of [Parallax](https://github.com/GradientHQ/parallax) to share compute resources across multiple devices (Mac Mini, MacBook Pro, Linux, etc.), creating a unified, powerful intelligence accessible via a unique, futuristic interface on any node in the network.
+**"I Need a Spark"** is a revolutionary distributed AI voice assistant built on [Parallax](https://github.com/GradientHQ/parallax). It turns your home devices into a collective intelligence network - where your Mac Mini, MacBook Pro, Linux machines, and more combine their compute power to run sophisticated AI models locally, privately, and beautifully.
 
-## The Vision
-Imagine a voice assistant that doesn't live in the cloud, but lives *on your network*, powered by the combined strength of your hardware. 
+## The Vision: A Network of Minds
 
--   **The Interface**: A transparent, frameless Electron window featuring a mesmerizing, ASCII-style symmetrical rotating orb. It vibrates and reacts to your voice and the AI's responses.
--   **The Brain**: Powered by Parallax, distributing the inference load.
--   **The Experience**: Fully customizable personas. Each device runs a client with its own "Assistant" identity, but they all tap into the same shared brain.
+Imagine installing an AI assistant on every device in your home. Each one has a unique personality and name - "Atlas" on your desk, "Nova" on your laptop, "Echo" in the living room - but they all share the computational power of your entire network through Parallax. No cloud. No subscriptions. Just pure, distributed AI running on hardware you own.
+
+### The Magic Triangle
+
+1. **The Interface**
+   - Transparent, frameless Electron window that floats on your desktop
+   - Hypnotic ASCII orb with sine waves, sawtooth patterns, and symmetrical rotation
+   - Audio-reactive visualization that pulses with your voice and the AI's responses
+   - Customizable with gear icon - change patterns, colors, and effects on the fly
+
+2. **The Brain**
+   - Powered by Parallax distributed inference
+   - Seamlessly shares compute across all devices
+   - Run models too large for a single machine
+   - True peer-to-peer AI intelligence
+
+3. **The Personality**
+   - Each device has its own AI persona with unique name and backstory
+   - Customizable traits, voice, and behavior
+   - All personas tap into the same shared knowledge base
+   - Create your own network of AI characters
 
 ## Features
 
@@ -82,9 +102,38 @@ Imagine a voice assistant that doesn't live in the cloud, but lives *on your net
     -   The ASCII Orb will turn **Green** when listening.
     -   Speak clearly. The Orb will turn **Yellow** while thinking (sending audio to Parallax) and **Magenta** when speaking back.
 
-## Development
+## Development Status & Roadmap
 
--   **`electron/`**: Contains the main process code and Python bridge logic.
--   **`src/`**: React frontend code.
--   **`python_bridge/`**: Python scripts that interface with the Parallax SDK and handle voice processing.
+This project is currently under active development for the NVIDIA DGX Spark competition. We're following an ambitious **3-Phase Development Plan**:
+
+### 🔵 Phase 1: Foundation & Visual Excellence (In Progress)
+- ✅ Basic Electron + React + TypeScript setup
+- ✅ Initial ASCII orb visualization
+- ✅ SQLite database for settings
+- 🚧 **Setup wizard overhaul** (fixing Initialize button, multi-step flow)
+- 🚧 **Advanced visualization** (sine/sawtooth waves, symmetry, rotation)
+- 🚧 **Settings panel** with gear icon and randomization
+
+### 🟢 Phase 2: Network Intelligence & Parallax Power (Planned)
+- Network auto-discovery with mDNS
+- Model download and synchronization
+- Enhanced Parallax integration
+- Personality management system
+- Multi-device testing and optimization
+
+### 🟣 Phase 3: Polish, Testing & Deployment (Planned)
+- Cross-platform packaging (macOS, Linux, Windows)
+- Performance optimization (60 FPS @ <5% CPU)
+- Comprehensive testing suite
+- Demo video and documentation
+- Competition submission
+
+**📋 See [tasks.md](tasks.md) for the complete development plan with detailed tasks and success metrics.**
+
+## Project Structure
+
+-   **`electron/`**: Main process code, IPC handlers, Python bridge, and database logic
+-   **`src/`**: React frontend components (App, AsciiOrb, Onboarding, Dashboard)
+-   **`python_bridge/`**: Python scripts for Parallax integration and voice processing
+-   **`tasks.md`**: Comprehensive 3-phase development plan
 
