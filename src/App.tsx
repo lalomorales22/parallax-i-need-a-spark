@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import AsciiOrb from './components/AsciiOrb';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
+import SettingsPanel from './components/SettingsPanel';
+import type { VisualizationSettings, WaveType, SymmetryMode, CharacterSet, ColorPreset } from './types/visualization';
+import { defaultVisualizationSettings } from './types/visualization';
 
 function App() {
   const [status, setStatus] = useState('IDLE');
@@ -10,6 +13,8 @@ function App() {
   const [isSetup, setIsSetup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [vizSettings, setVizSettings] = useState<VisualizationSettings>(defaultVisualizationSettings);
 
   useEffect(() => {
     // Check if setup is complete
@@ -26,6 +31,18 @@ function App() {
         // Load name
         window.ipcRenderer.getSetting('assistant_name').then((name) => {
           if (name) setAssistantName(name);
+        });
+
+        // Load visualization settings
+        window.ipcRenderer.getSetting('viz_settings').then((settingsStr) => {
+          if (settingsStr) {
+            try {
+              const loadedSettings = JSON.parse(settingsStr);
+              setVizSettings({ ...defaultVisualizationSettings, ...loadedSettings });
+            } catch (e) {
+              console.error('Failed to parse viz settings:', e);
+            }
+          }
         });
       }
       setLoading(false);
@@ -47,11 +64,24 @@ function App() {
     };
   }, []);
 
-  const handleOnboardingComplete = async (name: string, personality: string) => {
-    await window.ipcRenderer.saveSetting('assistant_name', name);
-    await window.ipcRenderer.saveSetting('assistant_personality', personality);
+  const handleOnboardingComplete = async (config: {
+    name: string;
+    personality: string;
+    role: 'host' | 'client' | null;
+    hostIp?: string;
+    model?: string;
+  }) => {
+    await window.ipcRenderer.saveSetting('assistant_name', config.name);
+    await window.ipcRenderer.saveSetting('assistant_personality', config.personality);
+    await window.ipcRenderer.saveSetting('device_role', config.role || '');
+    if (config.hostIp) {
+      await window.ipcRenderer.saveSetting('host_ip', config.hostIp);
+    }
+    if (config.model) {
+      await window.ipcRenderer.saveSetting('model', config.model);
+    }
     await window.ipcRenderer.saveSetting('setup_complete', 'true');
-    setAssistantName(name);
+    setAssistantName(config.name);
     setIsSetup(true);
   };
 
@@ -77,6 +107,40 @@ function App() {
     window.ipcRenderer.closeApp();
   };
 
+  const handleSettingsChange = (newSettings: VisualizationSettings) => {
+    setVizSettings(newSettings);
+    // Save to localStorage/database
+    window.ipcRenderer.saveSetting('viz_settings', JSON.stringify(newSettings));
+  };
+
+  const randomizeVisualization = () => {
+    const waveTypes: WaveType[] = ['sine', 'sawtooth', 'square', 'triangle', 'hybrid'];
+    const symmetryModes: SymmetryMode[] = ['none', 'radial2', 'radial4', 'radial6', 'radial8', 'bilateral', 'kaleidoscope'];
+    const characterSets: CharacterSet[] = ['classic', 'blocks', 'geometric', 'cyber', 'organic'];
+    const colorPresets: ColorPreset[] = ['neon-cyan', 'matrix-green', 'hot-pink', 'sunset', 'ocean', 'fire', 'rainbow'];
+
+    const random = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+    const randomSettings: VisualizationSettings = {
+      waveType: random(waveTypes),
+      waveFrequency: Math.random() * 9.9 + 0.1, // 0.1 - 10
+      waveAmplitude: Math.floor(Math.random() * 70) + 30, // 30 - 100
+      symmetryMode: random(symmetryModes),
+      rotationSpeed: Math.floor(Math.random() * 150) + 50, // 50 - 200
+      rotationAxes: {
+        x: Math.random() > 0.3,
+        y: Math.random() > 0.3,
+        z: Math.random() > 0.5
+      },
+      characterSet: random(characterSets),
+      colorPreset: random(colorPresets),
+      audioReactive: Math.random() > 0.3,
+      audioSensitivity: Math.floor(Math.random() * 60) + 30 // 30 - 90
+    };
+
+    handleSettingsChange(randomSettings);
+  };
+
   // Determine orb color based on status
   const getOrbColor = () => {
     switch (status) {
@@ -85,16 +149,6 @@ function App() {
       case 'SPEAKING': return '#ff00ff'; // Magenta
       case 'IDLE': return '#00ffcc'; // Cyan
       default: return '#00ffcc';
-    }
-  };
-
-  // Determine animation speed
-  const getAnimationSpeed = () => {
-    switch (status) {
-      case 'LISTENING': return '5s';
-      case 'THINKING': return '0.5s'; // Fast spin
-      case 'SPEAKING': return '2s'; // Pulse-like
-      default: return '10s';
     }
   };
 
@@ -109,13 +163,21 @@ function App() {
         justifyContent: 'center',
         width: '100%',
         height: '100%',
-        background: 'rgba(0, 0, 0, 0.9)',
-        borderRadius: '50%',
-        border: '2px solid #00ffcc',
-        boxShadow: '0 0 20px #00ffcc',
+        background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 20, 40, 0.95) 100%)',
         position: 'relative',
         overflow: 'hidden'
       }}>
+        {/* Animated background effect */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 50% 50%, rgba(0, 255, 204, 0.1) 0%, transparent 50%)',
+          animation: 'pulse 3s ease-in-out infinite'
+        }} />
+
         <button
           onClick={handleClose}
           style={{
@@ -128,10 +190,11 @@ function App() {
             fontSize: '24px',
             cursor: 'pointer',
             fontWeight: 'bold',
-            zIndex: 10
+            zIndex: 10,
+            transition: 'all 0.3s'
           }}
         >
-          X
+          ✕
         </button>
         <Onboarding onComplete={handleOnboardingComplete} />
       </div>
@@ -146,30 +209,89 @@ function App() {
       justifyContent: 'center',
       width: '100%',
       height: '100%',
-      background: 'rgba(0, 0, 0, 0.8)', // Semi-transparent background
-      borderRadius: '50%', // Circular UI
-      border: `2px solid ${getOrbColor()}`,
-      boxShadow: `0 0 20px ${getOrbColor()}`,
+      background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 20, 40, 0.9) 100%)',
       position: 'relative',
-      transition: 'border-color 0.5s, box-shadow 0.5s'
+      overflow: 'hidden'
     }}>
+      {/* Glassmorphic background effect */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: `radial-gradient(circle at 50% 50%, ${getOrbColor()}15 0%, transparent 60%)`,
+        transition: 'background 0.5s ease'
+      }} />
+
       {/* Close Button */}
       <button
         onClick={handleClose}
         style={{
           position: 'absolute',
           top: '20px',
-          right: '40px',
-          background: 'none',
-          border: 'none',
+          right: '20px',
+          background: 'rgba(255, 0, 85, 0.2)',
+          border: '1px solid #ff0055',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
           color: '#ff0055',
-          fontSize: '24px',
+          fontSize: '20px',
           cursor: 'pointer',
           fontWeight: 'bold',
-          zIndex: 10
+          zIndex: 10,
+          transition: 'all 0.3s',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 0 15px rgba(255, 0, 85, 0.3)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 0, 85, 0.4)';
+          e.currentTarget.style.transform = 'scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 0, 85, 0.2)';
+          e.currentTarget.style.transform = 'scale(1)';
         }}
       >
-        X
+        ✕
+      </button>
+
+      {/* Settings Gear Icon */}
+      <button
+        onClick={() => setShowSettings(!showSettings)}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '70px',
+          background: showSettings ? 'rgba(0, 255, 204, 0.3)' : 'rgba(0, 255, 204, 0.2)',
+          border: '1px solid #00ffcc',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          color: '#00ffcc',
+          fontSize: '20px',
+          cursor: 'pointer',
+          zIndex: 10,
+          transition: 'all 0.3s',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: showSettings ? '0 0 25px rgba(0, 255, 204, 0.5)' : '0 0 15px rgba(0, 255, 204, 0.3)',
+          animation: showSettings ? 'none' : 'undefined'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 255, 204, 0.4)';
+          e.currentTarget.style.transform = 'rotate(90deg) scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = showSettings ? 'rgba(0, 255, 204, 0.3)' : 'rgba(0, 255, 204, 0.2)';
+          e.currentTarget.style.transform = 'rotate(0deg) scale(1)';
+        }}
+      >
+        ⚙️
       </button>
 
       {/* Dashboard Toggle */}
@@ -178,108 +300,187 @@ function App() {
         style={{
           position: 'absolute',
           top: '25px',
-          left: '40px',
-          background: 'none',
+          left: '20px',
+          background: 'rgba(0, 255, 204, 0.1)',
           border: '1px solid #00ffcc',
+          borderRadius: '6px',
           color: '#00ffcc',
-          fontSize: '10px',
+          fontSize: '11px',
           cursor: 'pointer',
-          padding: '2px 5px',
-          zIndex: 10
+          padding: '6px 12px',
+          zIndex: 10,
+          transition: 'all 0.3s',
+          boxShadow: '0 0 10px rgba(0, 255, 204, 0.2)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 255, 204, 0.2)';
+          e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 204, 0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(0, 255, 204, 0.1)';
+          e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 204, 0.2)';
         }}
       >
-        DASHBOARD
+        📊 DASHBOARD
       </button>
 
       {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} logs={logs} />}
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        settings={vizSettings}
+        onSettingsChange={handleSettingsChange}
+        onRandomize={randomizeVisualization}
+      />
 
       {/* ASCII Orb */}
-      <AsciiOrb status={status} color={getOrbColor()} />
+      <AsciiOrb status={status} color={status !== 'IDLE' ? getOrbColor() : undefined} settings={vizSettings} />
 
-      <h1 style={{ margin: '0 0 10px 0', textShadow: `0 0 10px ${getOrbColor()}`, color: getOrbColor() }}>{assistantName}</h1>
-      <p style={{ fontSize: '12px', opacity: 0.8, color: getOrbColor() }}>STATUS: {status}</p>
+      <h1 style={{
+        margin: '0 0 10px 0',
+        textShadow: `0 0 15px ${getOrbColor()}`,
+        color: getOrbColor(),
+        fontSize: '36px',
+        fontWeight: 'bold',
+        letterSpacing: '3px',
+        transition: 'all 0.5s ease'
+      }}>
+        {assistantName}
+      </h1>
+      <p style={{
+        fontSize: '14px',
+        opacity: 0.9,
+        color: getOrbColor(),
+        textShadow: `0 0 10px ${getOrbColor()}`,
+        letterSpacing: '2px',
+        transition: 'all 0.5s ease'
+      }}>
+        STATUS: {status}
+      </p>
 
       {/* Log Output */}
       <div style={{
-        width: '80%',
-        height: '100px',
+        width: '85%',
+        maxWidth: '600px',
+        height: '120px',
         overflowY: 'auto',
-        background: 'rgba(0,0,0,0.5)',
-        border: `1px solid ${getOrbColor()}`,
-        borderRadius: '4px',
-        padding: '5px',
-        fontSize: '10px',
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(10px)',
+        border: `1px solid ${getOrbColor()}30`,
+        borderRadius: '8px',
+        padding: '10px',
+        fontSize: '11px',
         fontFamily: 'monospace',
         color: getOrbColor(),
-        marginBottom: '10px',
+        marginBottom: '15px',
+        marginTop: '20px',
         textAlign: 'left',
-        transition: 'border-color 0.5s, color 0.5s'
+        transition: 'border-color 0.5s, color 0.5s',
+        boxShadow: `0 0 20px ${getOrbColor()}20`
       }}>
         {logs.map((log, i) => (
-          <div key={i}>{log}</div>
+          <div key={i} style={{ opacity: 0.6 + (i / logs.length) * 0.4 }}>{log}</div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+      {/* Control Buttons */}
+      <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
         <button
           onClick={handleStartHost}
           style={{
-            background: 'transparent',
+            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
             border: '1px solid #00ffcc',
+            borderRadius: '8px',
             color: '#00ffcc',
-            padding: '8px 16px',
+            padding: '10px 20px',
             cursor: 'pointer',
             fontFamily: 'inherit',
+            fontSize: '14px',
+            fontWeight: 'bold',
             textTransform: 'uppercase',
-            letterSpacing: '1px',
-            transition: 'all 0.3s'
+            letterSpacing: '1.5px',
+            transition: 'all 0.3s',
+            boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 204, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.2)';
           }}
         >
-          Host
+          🧠 Host
         </button>
         <button
           onClick={handleStartClient}
           style={{
-            background: 'transparent',
+            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
             border: '1px solid #00ffcc',
+            borderRadius: '8px',
             color: '#00ffcc',
-            padding: '8px 16px',
+            padding: '10px 20px',
             cursor: 'pointer',
             fontFamily: 'inherit',
+            fontSize: '14px',
+            fontWeight: 'bold',
             textTransform: 'uppercase',
-            letterSpacing: '1px',
-            transition: 'all 0.3s'
+            letterSpacing: '1.5px',
+            transition: 'all 0.3s',
+            boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 204, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.2)';
           }}
         >
-          Client
+          🔌 Client
         </button>
         <button
           onClick={handleStartVoice}
           style={{
-            background: 'transparent',
+            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
             border: '1px solid #00ffcc',
+            borderRadius: '8px',
             color: '#00ffcc',
-            padding: '8px 16px',
+            padding: '10px 20px',
             cursor: 'pointer',
             fontFamily: 'inherit',
+            fontSize: '14px',
+            fontWeight: 'bold',
             textTransform: 'uppercase',
-            letterSpacing: '1px',
-            transition: 'all 0.3s'
+            letterSpacing: '1.5px',
+            transition: 'all 0.3s',
+            boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 204, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.2)';
           }}
         >
-          Voice
+          🎤 Voice
         </button>
       </div>
 
       <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        button:hover {
-          background: #00ffcc !important;
-          color: #000 !important;
-          box-shadow: 0 0 15px #00ffcc;
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
         }
       `}</style>
     </div>
