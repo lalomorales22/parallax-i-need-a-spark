@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",
@@ -21,27 +24,107 @@
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "^1.3.1",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/jest-dom": "^6.4.2",
+    "jsdom": "^24.0.0",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
+    "electron-updater": "^6.1.8",
     "typescript": "^5.4.2",
     "vite": "^5.1.6",
     "vite-plugin-electron": "^0.28.4",
-    "vite-plugin-electron-renderer": "^0.14.5"
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "vitest": "^1.3.1"
   },
   "build": {
     "appId": "com.parallax.spark",
     "productName": "Spark",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
     "mac": {
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "title": "Spark Installer",
+      "window": {
+        "width": 540,
+        "height": 380
+      }
     },
     "linux": {
       "target": [
         "AppImage",
-        "deb"
-      ]
+        "deb",
+        "rpm"
+      ],
+      "category": "Utility",
+      "icon": "build/icon.png",
+      "maintainer": "Parallax Spark Team",
+      "vendor": "Parallax",
+      "synopsis": "Distributed AI Voice Assistant",
+      "description": "A revolutionary distributed AI voice assistant powered by Parallax"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Spark"
     },
     "extraResources": [
-      "python_bridge/**/*"
-    ]
+      {
+        "from": "python_bridge",
+        "to": "python_bridge",
+        "filter": ["**/*"]
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    }
   }
 }

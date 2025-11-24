@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import path from 'node:path'
 import {
   initDb,
@@ -88,9 +89,36 @@ app.on('activate', () => {
   }
 })
 
+// Auto-updater configuration
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.on('update-available', (info) => {
+  win?.webContents.send('update-available', info);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  win?.webContents.send('update-downloaded', info);
+});
+
+autoUpdater.on('error', (err) => {
+  win?.webContents.send('update-error', err);
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  win?.webContents.send('update-download-progress', progress);
+});
+
 app.whenReady().then(() => {
   initDb();
   createWindow();
+
+  // Check for updates after window is created (only in production)
+  if (!process.env.VITE_DEV_SERVER_URL) {
+    setTimeout(() => {
+      autoUpdater.checkForUpdates();
+    }, 3000);
+  }
 
   // IPC Handlers
   ipcMain.handle('get-setting', (_event, key) => {

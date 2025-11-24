@@ -91,19 +91,48 @@ Imagine installing an AI assistant on every device in your home. Each one has a 
     ```
     This will launch the transparent "Spark" interface on your desktop.
 
-2.  **Start the Brain (Host)**:
-    -   Click the **HOST** button in the UI.
-    -   This initializes the Parallax server using the local Python environment.
-    -   Wait for the logs to show "ServerState.READY".
+2.  **Run Tests** (Optional):
+    ```bash
+    # Run all tests
+    npm test
 
-3.  **Connect a Body (Client)**:
-    -   On other devices, run the app and click **CLIENT**.
-    -   (Note: Ensure they are configured to point to the Host's IP).
+    # Run tests with UI
+    npm run test:ui
 
-4.  **Activate Voice**:
-    -   Click **VOICE** to enable the microphone and audio feedback.
-    -   The ASCII Orb will turn **Green** when listening.
-    -   Speak clearly. The Orb will turn **Yellow** while thinking (sending audio to Parallax) and **Magenta** when speaking back.
+    # Run tests with coverage
+    npm run test:coverage
+    ```
+
+3.  **Build for Production** (Optional):
+    ```bash
+    npm run build
+    ```
+    This will create distributable packages in the `release/` directory.
+
+2.  **Complete Setup Wizard**:
+    -   On first launch, you'll be guided through a 6-step setup process
+    -   Choose your AI's name, personality, and role (Host or Client)
+    -   Configure network settings and select an AI model
+
+3.  **Start the Brain (Host)**:
+    -   Click the **🧠 HOST** button in the UI
+    -   This initializes the Parallax server using the local Python environment
+    -   Wait for the logs to show "ServerState.READY"
+
+4.  **Connect a Body (Client)**:
+    -   On other devices, run the app and click **🔌 CLIENT**
+    -   Use auto-discovery or manually enter the Host's IP address
+    -   View connected devices in the Network Dashboard
+
+5.  **Activate Voice**:
+    -   Click **🎤 VOICE** to enable the microphone and audio feedback
+    -   The ASCII Orb will turn **Green** when listening
+    -   Speak clearly. The Orb will turn **Yellow** while thinking and **Magenta** when speaking
+
+6.  **Customize Your Experience**:
+    -   Click **⚙️ Settings** to customize visualizations
+    -   Click **✨ Personality** to edit your AI's traits and behavior
+    -   Click **🌐 Network** to view your distributed AI network
 
 ## Development Status & Roadmap
 
@@ -135,14 +164,45 @@ This project is currently under active development for the NVIDIA DGX Spark comp
 - ✅ **Conversation Memory** - SQLite storage for conversation history with context management
 - ⏳ **Multi-device testing** - In progress
 
-### 🟣 Phase 3: Polish, Testing & Deployment (Planned)
-- Cross-platform packaging (macOS, Linux, Windows)
-- Performance optimization (60 FPS @ <5% CPU)
-- Comprehensive testing suite
-- Demo video and documentation
-- Competition submission
+### 🟣 Phase 3: Polish, Testing & Deployment ✅ COMPLETED
+- ✅ Cross-platform packaging (macOS, Linux, Windows) with electron-builder
+- ✅ Performance optimization - Lazy loading, memoization, and React optimizations
+- ✅ Comprehensive testing suite - Vitest, React Testing Library, unit tests
+- ✅ Auto-updater integration - Automatic update notifications and downloads
+- ✅ Documentation - Complete user guide, contributing guide, and enhanced README
+- ⏳ Demo video and competition submission - In progress
 
 **📋 See [tasks.md](tasks.md) for the complete development plan with detailed tasks and success metrics.**
+
+## Phase 3 Features in Detail
+
+### 🚀 Performance Optimizations
+The app now includes several performance enhancements:
+- **Lazy Loading**: Heavy components (Dashboard, NetworkDashboard, PersonalityEditor) are loaded on-demand
+- **React Memoization**: Expensive computations are memoized with `useMemo` and `useCallback`
+- **Optimized Rendering**: Color calculations and other expensive operations are cached
+- **Suspense Integration**: Smooth loading experience with fallback UI
+
+### 🧪 Testing Infrastructure
+Comprehensive testing setup for reliability:
+- **Vitest**: Fast, modern testing framework
+- **React Testing Library**: Component testing utilities
+- **Coverage Reports**: Track test coverage across the codebase
+- **Unit Tests**: Core functionality tests for visualization, database, and components
+
+### 📦 Cross-Platform Packaging
+Production-ready installers for all platforms:
+- **macOS**: DMG and ZIP packages (Intel & Apple Silicon)
+- **Linux**: AppImage, DEB, and RPM packages
+- **Windows**: NSIS installer and portable executable
+- **Auto-Updates**: Built-in update mechanism via electron-updater
+
+### 📚 Documentation
+Complete documentation for users and contributors:
+- **User Guide**: Comprehensive walkthrough of all features ([USER_GUIDE.md](USER_GUIDE.md))
+- **Contributing Guide**: Developer guidelines and best practices ([CONTRIBUTING.md](CONTRIBUTING.md))
+- **Troubleshooting**: Common issues and solutions
+- **FAQ**: Frequently asked questions
 
 ## Phase 2 Features in Detail
 
@@ -180,8 +240,65 @@ All conversations are now stored in SQLite with:
 
 ## Project Structure
 
--   **`electron/`**: Main process code, IPC handlers, Python bridge, and database logic
--   **`src/`**: React frontend components (App, AsciiOrb, Onboarding, Dashboard, NetworkDashboard, PersonalityEditor)
--   **`python_bridge/`**: Python scripts for Parallax integration, voice processing, network discovery, and model management
--   **`tasks.md`**: Comprehensive 3-phase development plan
+```
+parallax-i-need-a-spark/
+├── electron/              # Electron main process
+│   ├── main.ts           # Main entry point with auto-updater
+│   ├── preload.ts        # Preload script for IPC
+│   └── db.ts             # SQLite database operations
+├── src/                  # React frontend
+│   ├── components/       # React components
+│   │   ├── AsciiOrb.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── NetworkDashboard.tsx
+│   │   ├── PersonalityEditor.tsx
+│   │   ├── SettingsPanel.tsx
+│   │   └── Onboarding.tsx
+│   ├── types/           # TypeScript type definitions
+│   ├── test/            # Test utilities and setup
+│   └── App.tsx          # Main app with lazy loading
+├── python_bridge/       # Python backend
+│   ├── host.py         # Parallax host server
+│   ├── client.py       # Parallax client worker
+│   ├── voice.py        # Voice processing (STT/TTS)
+│   ├── network_discovery.py  # mDNS device discovery
+│   └── model_manager.py      # Model download/management
+├── tests/               # Test files
+├── docs/                # Documentation
+│   ├── USER_GUIDE.md   # Comprehensive user guide
+│   └── CONTRIBUTING.md # Contribution guidelines
+├── tasks.md            # 3-phase development plan
+├── package.json        # Node dependencies & scripts
+└── vitest.config.ts    # Testing configuration
+```
+
+## Documentation
+
+- **[User Guide](USER_GUIDE.md)**: Complete guide for end users
+- **[Contributing](CONTRIBUTING.md)**: Guidelines for contributors
+- **[Tasks](tasks.md)**: Detailed development roadmap and progress
+
+## Testing
+
+This project includes comprehensive testing:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# View test coverage
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
+```
+
+Current test coverage includes:
+- ✅ Visualization settings validation
+- ✅ Component rendering tests
+- ✅ Database operations
+- ✅ IPC communication mocking
 

@@ -1,12 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
 import AsciiOrb from './components/AsciiOrb';
 import Onboarding from './components/Onboarding';
-import Dashboard from './components/Dashboard';
-import NetworkDashboard from './components/NetworkDashboard';
-import PersonalityEditor from './components/PersonalityEditor';
 import SettingsPanel from './components/SettingsPanel';
 import type { VisualizationSettings, WaveType, SymmetryMode, CharacterSet, ColorPreset } from './types/visualization';
 import { defaultVisualizationSettings } from './types/visualization';
+
+// Lazy load heavy components for better performance
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const NetworkDashboard = lazy(() => import('./components/NetworkDashboard'));
+const PersonalityEditor = lazy(() => import('./components/PersonalityEditor'));
+
+// Loading fallback component
+const LoadingSpinner = () => (
+  <div style={{
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    color: '#00ffcc',
+    fontSize: '16px',
+    animation: 'pulse 1.5s ease-in-out infinite'
+  }}>
+    Loading...
+  </div>
+);
 
 function App() {
   const [status, setStatus] = useState('IDLE');
@@ -121,7 +138,7 @@ function App() {
     window.ipcRenderer.saveSetting('viz_settings', JSON.stringify(newSettings));
   };
 
-  const randomizeVisualization = () => {
+  const randomizeVisualization = useCallback(() => {
     const waveTypes: WaveType[] = ['sine', 'sawtooth', 'square', 'triangle', 'hybrid'];
     const symmetryModes: SymmetryMode[] = ['none', 'radial2', 'radial4', 'radial6', 'radial8', 'bilateral', 'kaleidoscope'];
     const characterSets: CharacterSet[] = ['classic', 'blocks', 'geometric', 'cyber', 'organic'];
@@ -147,10 +164,10 @@ function App() {
     };
 
     handleSettingsChange(randomSettings);
-  };
+  }, []);
 
-  // Determine orb color based on status
-  const getOrbColor = () => {
+  // Determine orb color based on status (memoized for performance)
+  const getOrbColor = useMemo(() => {
     switch (status) {
       case 'LISTENING': return '#00ff00'; // Green
       case 'THINKING': return '#ffff00'; // Yellow
@@ -158,7 +175,7 @@ function App() {
       case 'IDLE': return '#00ffcc'; // Cyan
       default: return '#00ffcc';
     }
-  };
+  }, [status]);
 
   if (loading) return null;
 
@@ -228,7 +245,7 @@ function App() {
         left: 0,
         right: 0,
         bottom: 0,
-        background: `radial-gradient(circle at 50% 50%, ${getOrbColor()}15 0%, transparent 60%)`,
+        background: `radial-gradient(circle at 50% 50%, ${getOrbColor}15 0%, transparent 60%)`,
         transition: 'background 0.5s ease'
       }} />
 
@@ -403,18 +420,20 @@ function App() {
         </button>
       </div>
 
-      {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} logs={logs} />}
-      {showNetworkDashboard && <NetworkDashboard onClose={() => setShowNetworkDashboard(false)} />}
-      {showPersonalityEditor && (
-        <PersonalityEditor
-          deviceId={currentDeviceId}
-          onClose={() => setShowPersonalityEditor(false)}
-          onSave={() => {
-            // Reload personality or update UI
-            console.log('Personality saved!');
-          }}
-        />
-      )}
+      <Suspense fallback={<LoadingSpinner />}>
+        {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} logs={logs} />}
+        {showNetworkDashboard && <NetworkDashboard onClose={() => setShowNetworkDashboard(false)} />}
+        {showPersonalityEditor && (
+          <PersonalityEditor
+            deviceId={currentDeviceId}
+            onClose={() => setShowPersonalityEditor(false)}
+            onSave={() => {
+              // Reload personality or update UI
+              console.log('Personality saved!');
+            }}
+          />
+        )}
+      </Suspense>
       <SettingsPanel
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
@@ -424,12 +443,12 @@ function App() {
       />
 
       {/* ASCII Orb */}
-      <AsciiOrb status={status} color={status !== 'IDLE' ? getOrbColor() : undefined} settings={vizSettings} />
+      <AsciiOrb status={status} color={status !== 'IDLE' ? getOrbColor : undefined} settings={vizSettings} />
 
       <h1 style={{
         margin: '0 0 10px 0',
-        textShadow: `0 0 15px ${getOrbColor()}`,
-        color: getOrbColor(),
+        textShadow: `0 0 15px ${getOrbColor}`,
+        color: getOrbColor,
         fontSize: '36px',
         fontWeight: 'bold',
         letterSpacing: '3px',
@@ -440,8 +459,8 @@ function App() {
       <p style={{
         fontSize: '14px',
         opacity: 0.9,
-        color: getOrbColor(),
-        textShadow: `0 0 10px ${getOrbColor()}`,
+        color: getOrbColor,
+        textShadow: `0 0 10px ${getOrbColor}`,
         letterSpacing: '2px',
         transition: 'all 0.5s ease'
       }}>
@@ -456,17 +475,17 @@ function App() {
         overflowY: 'auto',
         background: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(10px)',
-        border: `1px solid ${getOrbColor()}30`,
+        border: `1px solid ${getOrbColor}30`,
         borderRadius: '8px',
         padding: '10px',
         fontSize: '11px',
         fontFamily: 'monospace',
-        color: getOrbColor(),
+        color: getOrbColor,
         marginBottom: '15px',
         marginTop: '20px',
         textAlign: 'left',
         transition: 'border-color 0.5s, color 0.5s',
-        boxShadow: `0 0 20px ${getOrbColor()}20`
+        boxShadow: `0 0 20px ${getOrbColor}20`
       }}>
         {logs.map((log, i) => (
           <div key={i} style={{ opacity: 0.6 + (i / logs.length) * 0.4 }}>{log}</div>
