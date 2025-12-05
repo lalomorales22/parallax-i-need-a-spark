@@ -29,7 +29,7 @@ Imagine installing an AI assistant on every device in your home. Each one has a 
 
 The main interface features a mesmerizing ASCII orb that responds to audio and status changes:
 
-\`\`\`
+```
      ╔════════════════════════════════════╗
      ║           ✕     ⚙️                 ║
      ║                                    ║
@@ -45,7 +45,7 @@ The main interface features a mesmerizing ASCII orb that responds to audio and s
      ║       [ 🎤 TAP TO SPEAK ]          ║
      ║                                    ║
      ╚════════════════════════════════════╝
-\`\`\`
+```
 
 ## Features
 
