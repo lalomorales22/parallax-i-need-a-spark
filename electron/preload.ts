@@ -2,16 +2,8 @@ import { ipcRenderer, contextBridge } from 'electron'
 
 console.log('Preload script loaded');
 
-// Expose environment variables to renderer
-const SPARK_MODE = process.env.SPARK_MODE || 'standalone';
-const PARALLAX_HOST = process.env.PARALLAX_HOST || 'localhost';
-
 // --------- Expose some API to the Renderer process ---------
 try {
-  // Expose spark mode and host
-  contextBridge.exposeInMainWorld('SPARK_MODE', SPARK_MODE);
-  contextBridge.exposeInMainWorld('PARALLAX_HOST', PARALLAX_HOST);
-  
   contextBridge.exposeInMainWorld('ipcRenderer', {
     on(...args: Parameters<typeof ipcRenderer.on>) {
       const [channel, listener] = args
@@ -32,6 +24,8 @@ try {
     // Specific APIs
     getSetting: (key: string) => ipcRenderer.invoke('get-setting', key),
     saveSetting: (key: string, value: string) => ipcRenderer.invoke('save-setting', key, value),
+    getSparkMode: () => ipcRenderer.invoke('get-spark-mode'),
+    getParallaxHost: () => ipcRenderer.invoke('get-parallax-host'),
     startHost: () => ipcRenderer.invoke('start-host'),
     startClient: () => ipcRenderer.invoke('start-client'),
     startVoice: () => ipcRenderer.invoke('start-voice'),

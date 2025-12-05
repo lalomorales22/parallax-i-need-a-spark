@@ -13950,6 +13950,14 @@ function updateDeviceStatus(device_id, status) {
   stmt.run(status, device_id);
 }
 function savePersonality(personality) {
+  const existingDevice = db.prepare("SELECT device_id FROM devices WHERE device_id = ?").get(personality.device_id);
+  if (!existingDevice) {
+    const insertDevice = db.prepare(`
+      INSERT INTO devices (device_id, name, role, status)
+      VALUES (?, ?, 'local', 'online')
+    `);
+    insertDevice.run(personality.device_id, personality.name);
+  }
   const data = {
     device_id: personality.device_id,
     name: personality.name,
@@ -14451,6 +14459,12 @@ require$$1$4.app.whenReady().then(() => {
   };
   require$$1$4.ipcMain.handle("get-setting", (_event, key) => {
     return getSetting(key);
+  });
+  require$$1$4.ipcMain.handle("get-spark-mode", () => {
+    return process.env.SPARK_MODE || "standalone";
+  });
+  require$$1$4.ipcMain.handle("get-parallax-host", () => {
+    return process.env.PARALLAX_HOST || "localhost";
   });
   require$$1$4.ipcMain.handle("save-setting", (_event, key, value) => {
     saveSetting(key, value);

@@ -1,11 +1,7 @@
 "use strict";
 const electron = require("electron");
 console.log("Preload script loaded");
-const SPARK_MODE = process.env.SPARK_MODE || "standalone";
-const PARALLAX_HOST = process.env.PARALLAX_HOST || "localhost";
 try {
-  electron.contextBridge.exposeInMainWorld("SPARK_MODE", SPARK_MODE);
-  electron.contextBridge.exposeInMainWorld("PARALLAX_HOST", PARALLAX_HOST);
   electron.contextBridge.exposeInMainWorld("ipcRenderer", {
     on(...args) {
       const [channel, listener] = args;

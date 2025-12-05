@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { VisualizationSettings, WaveType, SymmetryMode, CharacterSet, ColorPreset } from '../types/visualization';
 
-// Get mode from environment (set by run-host.sh or run-client.sh)
-const SPARK_MODE = (window as any).SPARK_MODE || 'standalone';
-const PARALLAX_HOST = (window as any).PARALLAX_HOST || 'localhost';
-
 interface Device {
   device_id: string;
   name: string;
@@ -63,6 +59,8 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('visuals');
   const [devices, setDevices] = useState<Device[]>([]);
+  const [sparkMode, setSparkMode] = useState('standalone');
+  const [parallaxHost, setParallaxHost] = useState('localhost');
   const [personality, setPersonality] = useState<Personality>({
     device_id: currentDeviceId,
     name: '',
@@ -76,8 +74,20 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
     if (isOpen) {
       loadDevices();
       loadPersonality();
+      loadSparkMode();
     }
   }, [isOpen, currentDeviceId]);
+
+  const loadSparkMode = async () => {
+    try {
+      const mode = await window.ipcRenderer.invoke('get-spark-mode');
+      const host = await window.ipcRenderer.invoke('get-parallax-host');
+      setSparkMode(mode || 'standalone');
+      setParallaxHost(host || 'localhost');
+    } catch (e) {
+      console.error('Failed to load spark mode:', e);
+    }
+  };
 
   const loadDevices = async () => {
     try {
@@ -136,6 +146,8 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
             onStartVoice={onStartVoice}
             autoListen={autoListen}
             onAutoListenChange={onAutoListenChange}
+            sparkMode={sparkMode}
+            parallaxHost={parallaxHost}
           />
         );
       case 'network':
@@ -415,7 +427,9 @@ const ControlsTab: React.FC<{
   onStartVoice: () => void;
   autoListen: boolean;
   onAutoListenChange: (value: boolean) => void;
-}> = ({ onStartHost, onStartClient, onStartVoice, autoListen, onAutoListenChange }) => {
+  sparkMode: string;
+  parallaxHost: string;
+}> = ({ onStartHost, onStartClient, onStartVoice, autoListen, onAutoListenChange, sparkMode, parallaxHost }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{
@@ -460,7 +474,7 @@ const ControlsTab: React.FC<{
         <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', opacity: 0.8, color: '#ff00ff' }}>NETWORK MODE</h3>
         
         {/* Show current mode based on how the app was started */}
-        {SPARK_MODE === 'host' ? (
+        {sparkMode === 'host' ? (
           <div style={{
             padding: '16px',
             background: 'rgba(0, 255, 0, 0.1)',
@@ -474,7 +488,7 @@ const ControlsTab: React.FC<{
               Parallax scheduler is running. Clients can connect to this machine.
             </div>
           </div>
-        ) : SPARK_MODE === 'client' ? (
+        ) : sparkMode === 'client' ? (
           <div style={{
             padding: '16px',
             background: 'rgba(255, 0, 255, 0.1)',
@@ -485,7 +499,7 @@ const ControlsTab: React.FC<{
             <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔌</div>
             <div style={{ color: '#ff00ff', fontWeight: 'bold' }}>Running as CLIENT</div>
             <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '8px' }}>
-              Connected to host at {PARALLAX_HOST}:3001
+              Connected to host at {parallaxHost}:3001
             </div>
           </div>
         ) : (

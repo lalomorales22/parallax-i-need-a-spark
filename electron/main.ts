@@ -146,6 +146,15 @@ app.whenReady().then(() => {
     return getSetting(key);
   });
 
+  // Get spark mode and host from environment
+  ipcMain.handle('get-spark-mode', () => {
+    return process.env.SPARK_MODE || 'standalone';
+  });
+
+  ipcMain.handle('get-parallax-host', () => {
+    return process.env.PARALLAX_HOST || 'localhost';
+  });
+
   ipcMain.handle('save-setting', (_event, key, value) => {
     saveSetting(key, value);
     return true;
