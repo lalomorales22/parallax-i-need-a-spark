@@ -14446,15 +14446,33 @@ require$$1$4.app.whenReady().then(() => {
     }, 3e3);
   }
   const findPythonPath = () => {
-    const homeDir = process.env.HOME || "";
-    const venvPython = path$m.join(homeDir, "Desktop/inprogress/parallax-i-need-a-spark/parallax/venv/bin/python3.12");
     const fs2 = require("fs");
-    if (fs2.existsSync(venvPython)) {
-      return venvPython;
+    const appDir = require$$1$4.app.isPackaged ? path$m.dirname(require$$1$4.app.getPath("exe")) : path$m.join(__dirname, "..");
+    const venvPaths = [
+      path$m.join(appDir, "parallax/venv/bin/python3.12"),
+      path$m.join(appDir, "parallax/venv/bin/python3"),
+      path$m.join(appDir, "parallax/venv/bin/python"),
+      path$m.join(appDir, "venv/bin/python3.12"),
+      path$m.join(appDir, "venv/bin/python3"),
+      path$m.join(appDir, "venv/bin/python")
+    ];
+    for (const venvPath of venvPaths) {
+      if (fs2.existsSync(venvPath)) {
+        console.log(`Found Python venv at: ${venvPath}`);
+        return venvPath;
+      }
     }
     if (fs2.existsSync("/opt/homebrew/bin/python3.12")) {
+      console.log("Using Homebrew Python 3.12");
       return "/opt/homebrew/bin/python3.12";
     }
+    if (fs2.existsSync("/usr/bin/python3.12")) {
+      return "/usr/bin/python3.12";
+    }
+    if (fs2.existsSync("/usr/bin/python3")) {
+      return "/usr/bin/python3";
+    }
+    console.log("Falling back to system python3");
     return "python3";
   };
   require$$1$4.ipcMain.handle("get-setting", (_event, key) => {

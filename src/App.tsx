@@ -94,12 +94,32 @@ function App() {
     setStatus('STARTING HOST...');
     const res = await window.ipcRenderer.startHost();
     setLogs(prev => [...prev, res]);
+    
+    // Start network discovery as host
+    try {
+      const personality = await window.ipcRenderer.getSetting('assistant_personality') || '';
+      const model = await window.ipcRenderer.getSetting('model') || 'Qwen/Qwen3-0.6B';
+      await window.ipcRenderer.startNetworkDiscovery(assistantName, 'host', personality, model);
+      setLogs(prev => [...prev, 'Network discovery started (host mode)']);
+    } catch (e) {
+      console.error('Failed to start network discovery:', e);
+    }
   };
 
   const handleStartClient = async () => {
     setStatus('STARTING CLIENT...');
     const res = await window.ipcRenderer.startClient();
     setLogs(prev => [...prev, res]);
+    
+    // Start network discovery as client
+    try {
+      const personality = await window.ipcRenderer.getSetting('assistant_personality') || '';
+      const model = await window.ipcRenderer.getSetting('model') || '';
+      await window.ipcRenderer.startNetworkDiscovery(assistantName, 'client', personality, model);
+      setLogs(prev => [...prev, 'Network discovery started (client mode)']);
+    } catch (e) {
+      console.error('Failed to start network discovery:', e);
+    }
   };
 
   const handleStartVoice = async () => {

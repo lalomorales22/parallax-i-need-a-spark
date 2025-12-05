@@ -129,16 +129,45 @@ app.whenReady().then(() => {
   
   // Helper to find Python - prefer Parallax venv with Python 3.12
   const findPythonPath = (): string => {
-    const homeDir = process.env.HOME || '';
-    const venvPython = path.join(homeDir, 'Desktop/inprogress/parallax-i-need-a-spark/parallax/venv/bin/python3.12');
     const fs = require('fs');
-    if (fs.existsSync(venvPython)) {
-      return venvPython;
+    
+    // First, try the venv relative to the app directory
+    const appDir = app.isPackaged 
+      ? path.dirname(app.getPath('exe'))
+      : path.join(__dirname, '..');
+    
+    // Check for venv in the project directory
+    const venvPaths = [
+      path.join(appDir, 'parallax/venv/bin/python3.12'),
+      path.join(appDir, 'parallax/venv/bin/python3'),
+      path.join(appDir, 'parallax/venv/bin/python'),
+      path.join(appDir, 'venv/bin/python3.12'),
+      path.join(appDir, 'venv/bin/python3'),
+      path.join(appDir, 'venv/bin/python'),
+    ];
+    
+    for (const venvPath of venvPaths) {
+      if (fs.existsSync(venvPath)) {
+        console.log(`Found Python venv at: ${venvPath}`);
+        return venvPath;
+      }
     }
-    // Fallback to homebrew Python 3.12
+    
+    // Fallback to homebrew Python 3.12 on macOS
     if (fs.existsSync('/opt/homebrew/bin/python3.12')) {
+      console.log('Using Homebrew Python 3.12');
       return '/opt/homebrew/bin/python3.12';
     }
+    
+    // Linux fallback
+    if (fs.existsSync('/usr/bin/python3.12')) {
+      return '/usr/bin/python3.12';
+    }
+    if (fs.existsSync('/usr/bin/python3')) {
+      return '/usr/bin/python3';
+    }
+    
+    console.log('Falling back to system python3');
     return 'python3';
   };
 
