@@ -2,35 +2,46 @@ import sys
 import os
 import subprocess
 import argparse
+import shutil
 
 def main():
-    parser = argparse.ArgumentParser(description="Start Parallax Host")
-    parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-0.5B-Instruct", help="Model to load")
-    parser.add_argument("--port", type=str, default="8888", help="HTTP Port")
+    parser = argparse.ArgumentParser(description="Start Parallax Host (Scheduler)")
+    parser.add_argument("--model", type=str, default="Qwen/Qwen3-0.6B", help="Model to load")
+    parser.add_argument("--nodes", type=int, default=1, help="Number of worker nodes expected")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind to (0.0.0.0 for network access)")
     args, unknown = parser.parse_known_args()
 
-    # Calculate project root (../../src from this file)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(current_dir, "../../src"))
+    # Check if parallax CLI is available
+    parallax_path = shutil.which("parallax")
     
-    # Path to launch.py
-    launch_script = os.path.join(project_root, "parallax/launch.py")
+    if not parallax_path:
+        print("PYTHON_BRIDGE: ERROR - Parallax CLI not found!")
+        print("PYTHON_BRIDGE: Please install Parallax first:")
+        print("PYTHON_BRIDGE:   git clone https://github.com/GradientHQ/parallax.git")
+        print("PYTHON_BRIDGE:   cd parallax")
+        print("PYTHON_BRIDGE:   pip install -e '.[mac]'  # For macOS")
+        print("PYTHON_BRIDGE:   pip install -e '.[gpu]'  # For Linux with GPU")
+        sys.exit(1)
 
-    # Construct command
+    # Use the Parallax CLI to run the scheduler
+    # parallax run -m {model} -n {nodes} --host 0.0.0.0
     cmd = [
-        sys.executable,
-        launch_script,
-        "--model-path", args.model,
-        "--port", args.port,
-        # Pass through any other unknown arguments
+        "parallax", "run",
+        "-m", args.model,
+        "-n", str(args.nodes),
+        "--host", args.host,
+        "-u",  # Disable usage telemetry
     ] + unknown
 
-    print(f"PYTHON_BRIDGE: Starting Host with command: {' '.join(cmd)}")
-    print(f"PYTHON_BRIDGE: Project Root: {project_root}")
-
-    # Set PYTHONPATH to include src
-    env = os.environ.copy()
-    env["PYTHONPATH"] = project_root + os.pathsep + env.get("PYTHONPATH", "")
+    print(f"PYTHON_BRIDGE: Starting Parallax Scheduler...")
+    print(f"PYTHON_BRIDGE: Model: {args.model}")
+    print(f"PYTHON_BRIDGE: Expected nodes: {args.nodes}")
+    print(f"PYTHON_BRIDGE: Command: {' '.join(cmd)}")
+    print(f"PYTHON_BRIDGE: ")
+    print(f"PYTHON_BRIDGE: The Parallax setup UI will be available at http://localhost:3001")
+    print(f"PYTHON_BRIDGE: The chat API will be at http://localhost:3001/v1/chat/completions")
+    print(f"PYTHON_BRIDGE: ")
+    sys.stdout.flush()
 
     try:
         # Run the process and stream output
@@ -39,8 +50,7 @@ def main():
             stdout=subprocess.PIPE, 
             stderr=subprocess.STDOUT, 
             text=True, 
-            bufsize=1,
-            env=env
+            bufsize=1
         )
 
         for line in process.stdout:
@@ -48,8 +58,11 @@ def main():
             sys.stdout.flush()
 
         process.wait()
+    except FileNotFoundError:
+        print("PYTHON_BRIDGE: ERROR - Could not run 'parallax' command")
+        print("PYTHON_BRIDGE: Make sure Parallax is installed and in your PATH")
     except KeyboardInterrupt:
-        print("PYTHON_BRIDGE: Stopping Host...")
+        print("PYTHON_BRIDGE: Stopping Parallax Scheduler...")
         process.terminate()
 
 if __name__ == "__main__":

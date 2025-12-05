@@ -13950,11 +13950,19 @@ function updateDeviceStatus(device_id, status) {
   stmt.run(status, device_id);
 }
 function savePersonality(personality) {
+  const data = {
+    device_id: personality.device_id,
+    name: personality.name,
+    backstory: personality.backstory || "",
+    traits: personality.traits || "",
+    voice_settings: personality.voice_settings || personality.voice_style || "",
+    system_prompt: personality.system_prompt || personality.response_style || ""
+  };
   const stmt = db.prepare(`
     INSERT INTO personalities (device_id, name, backstory, traits, voice_settings, system_prompt, updated_at)
     VALUES (@device_id, @name, @backstory, @traits, @voice_settings, @system_prompt, CURRENT_TIMESTAMP)
   `);
-  stmt.run(personality);
+  stmt.run(data);
 }
 function getPersonality(device_id) {
   const stmt = db.prepare("SELECT * FROM personalities WHERE device_id = ? ORDER BY created_at DESC LIMIT 1");
@@ -14373,12 +14381,18 @@ function createWindow() {
     frame: false,
     hasShadow: false,
     alwaysOnTop: true,
+    show: false,
+    // Don't show until ready
     webPreferences: {
       preload: path$m.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false
     }
+  });
+  win.once("ready-to-show", () => {
+    win == null ? void 0 : win.show();
+    win == null ? void 0 : win.focus();
   });
   win.webContents.on("did-finish-load", () => {
     win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
@@ -14423,6 +14437,18 @@ require$$1$4.app.whenReady().then(() => {
       main$1.autoUpdater.checkForUpdates();
     }, 3e3);
   }
+  const findPythonPath = () => {
+    const homeDir = process.env.HOME || "";
+    const venvPython = path$m.join(homeDir, "Desktop/inprogress/parallax-i-need-a-spark/parallax/venv/bin/python3.12");
+    const fs2 = require("fs");
+    if (fs2.existsSync(venvPython)) {
+      return venvPython;
+    }
+    if (fs2.existsSync("/opt/homebrew/bin/python3.12")) {
+      return "/opt/homebrew/bin/python3.12";
+    }
+    return "python3";
+  };
   require$$1$4.ipcMain.handle("get-setting", (_event, key) => {
     return getSetting(key);
   });
@@ -14436,13 +14462,15 @@ require$$1$4.app.whenReady().then(() => {
     if (require$$1$4.app.isPackaged) {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/host.py");
     }
-    const pythonPath = "python3";
+    const pythonPath = findPythonPath();
+    console.log(`Using Python: ${pythonPath}`);
     let pyshell = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,
       pythonOptions: ["-u"],
       // get print results in real-time
-      args: ["--model", "Qwen/Qwen2.5-0.5B-Instruct"]
+      args: ["--model", "Qwen/Qwen3-0.6B"]
+      // Use Qwen3 - smallest model supported by Parallax
     });
     pyshell.on("message", function(message) {
       console.log(message);
@@ -14464,13 +14492,13 @@ require$$1$4.app.whenReady().then(() => {
     if (require$$1$4.app.isPackaged) {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/client.py");
     }
-    const pythonPath = "python3";
-    const schedulerAddr = "127.0.0.1:8888";
+    const pythonPath = findPythonPath();
+    const schedulerAddr = getSetting("host_scheduler_addr") || "";
     let pyshell = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,
       pythonOptions: ["-u"],
-      args: ["--scheduler-addr", schedulerAddr]
+      args: schedulerAddr ? ["--scheduler-addr", schedulerAddr] : []
     });
     pyshell.on("message", function(message) {
       console.log(message);
@@ -14492,7 +14520,8 @@ require$$1$4.app.whenReady().then(() => {
     if (require$$1$4.app.isPackaged) {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/voice_assistant.py");
     }
-    const pythonPath = "python3";
+    const pythonPath = findPythonPath();
+    console.log(`Voice Assistant using Python: ${pythonPath}`);
     let pyshell = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,

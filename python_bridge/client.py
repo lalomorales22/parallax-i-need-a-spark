@@ -2,33 +2,47 @@ import sys
 import os
 import subprocess
 import argparse
+import shutil
 
 def main():
-    parser = argparse.ArgumentParser(description="Start Parallax Client")
-    parser.add_argument("--scheduler-addr", type=str, required=True, help="Address of the Host Scheduler")
+    parser = argparse.ArgumentParser(description="Start Parallax Client (Node Worker)")
+    parser.add_argument("--scheduler-addr", type=str, default=None, 
+                        help="Scheduler address (peer ID) for remote connection. Leave empty for local network auto-discovery.")
     args, unknown = parser.parse_known_args()
 
-    # Calculate project root (../../src from this file)
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.abspath(os.path.join(current_dir, "../../src"))
+    # Check if parallax CLI is available
+    parallax_path = shutil.which("parallax")
     
-    # Path to launch.py
-    launch_script = os.path.join(project_root, "parallax/launch.py")
+    if not parallax_path:
+        print("PYTHON_BRIDGE: ERROR - Parallax CLI not found!")
+        print("PYTHON_BRIDGE: Please install Parallax first:")
+        print("PYTHON_BRIDGE:   git clone https://github.com/GradientHQ/parallax.git")
+        print("PYTHON_BRIDGE:   cd parallax")
+        print("PYTHON_BRIDGE:   pip install -e '.[mac]'  # For macOS")
+        print("PYTHON_BRIDGE:   pip install -e '.[gpu]'  # For Linux with GPU")
+        sys.exit(1)
 
-    # Construct command
-    cmd = [
-        sys.executable,
-        launch_script,
-        "--scheduler-addr", args.scheduler_addr,
-        # Pass through any other unknown arguments
-    ] + unknown
-
-    print(f"PYTHON_BRIDGE: Starting Client connecting to {args.scheduler_addr}")
+    # Use the Parallax CLI to join as a node
+    # parallax join [-s scheduler-address]
+    cmd = ["parallax", "join", "-u"]  # -u disables telemetry
+    
+    if args.scheduler_addr:
+        # Remote connection with explicit scheduler address
+        cmd.extend(["-s", args.scheduler_addr])
+        print(f"PYTHON_BRIDGE: Joining Parallax network (remote mode)")
+        print(f"PYTHON_BRIDGE: Scheduler: {args.scheduler_addr}")
+    else:
+        # Local network auto-discovery
+        print(f"PYTHON_BRIDGE: Joining Parallax network (local auto-discovery)")
+    
+    cmd.extend(unknown)
+    
     print(f"PYTHON_BRIDGE: Command: {' '.join(cmd)}")
-
-    # Set PYTHONPATH to include src
-    env = os.environ.copy()
-    env["PYTHONPATH"] = project_root + os.pathsep + env.get("PYTHONPATH", "")
+    print(f"PYTHON_BRIDGE: ")
+    print(f"PYTHON_BRIDGE: This node will contribute compute power to the cluster.")
+    print(f"PYTHON_BRIDGE: Node API will be available at http://localhost:3000")
+    print(f"PYTHON_BRIDGE: ")
+    sys.stdout.flush()
 
     try:
         # Run the process and stream output
@@ -37,8 +51,7 @@ def main():
             stdout=subprocess.PIPE, 
             stderr=subprocess.STDOUT, 
             text=True, 
-            bufsize=1,
-            env=env
+            bufsize=1
         )
 
         for line in process.stdout:
@@ -46,8 +59,11 @@ def main():
             sys.stdout.flush()
 
         process.wait()
+    except FileNotFoundError:
+        print("PYTHON_BRIDGE: ERROR - Could not run 'parallax' command")
+        print("PYTHON_BRIDGE: Make sure Parallax is installed and in your PATH")
     except KeyboardInterrupt:
-        print("PYTHON_BRIDGE: Stopping Client...")
+        print("PYTHON_BRIDGE: Stopping Parallax Node...")
         process.terminate()
 
 if __name__ == "__main__":

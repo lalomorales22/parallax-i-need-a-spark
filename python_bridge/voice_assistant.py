@@ -2,14 +2,16 @@ import asyncio
 import speech_recognition as sr
 import requests
 import edge_tts
-import pygame
 import os
 import sys
 import tempfile
 import argparse
+import subprocess
+import time
 
 # Constants
-PARALLAX_API_URL = "http://localhost:8888/v1/chat/completions"
+# Parallax scheduler runs on port 3001, nodes on port 3000
+PARALLAX_API_URL = "http://localhost:3001/v1/chat/completions"
 TEMP_AUDIO_FILE = os.path.join(tempfile.gettempdir(), "spark_response.mp3")
 
 def log(msg):
@@ -20,37 +22,61 @@ def set_state(state):
     print(f"STATE:{state}")
     sys.stdout.flush()
 
-async def play_audio(file_path):
-    pygame.mixer.init()
-    pygame.mixer.music.load(file_path)
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)
-    pygame.mixer.quit()
+def play_audio_with_afplay(file_path):
+    """Use macOS afplay to play audio - avoids pygame/pyaudio conflicts"""
+    try:
+        # Small delay to ensure file is fully written
+        time.sleep(0.1)
+        
+        if not os.path.exists(file_path):
+            log(f"Audio file not found: {file_path}")
+            return
+            
+        # afplay is a built-in macOS command that plays audio files
+        result = subprocess.run(["afplay", file_path], capture_output=True, text=True)
+        if result.returncode != 0:
+            log(f"afplay stderr: {result.stderr}")
+    except Exception as e:
+        log(f"Audio playback error: {e}")
 
 async def text_to_speech(text, voice="en-US-AriaNeural"):
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(TEMP_AUDIO_FILE)
-    await play_audio(TEMP_AUDIO_FILE)
+    try:
+        communicate = edge_tts.Communicate(text, voice)
+        await communicate.save(TEMP_AUDIO_FILE)
+        # Use sync audio player (afplay blocks until done)
+        play_audio_with_afplay(TEMP_AUDIO_FILE)
+    except Exception as e:
+        log(f"TTS error: {e}")
 
 def get_llm_response(prompt, history):
     headers = {"Content-Type": "application/json"}
     messages = history + [{"role": "user", "content": prompt}]
     
     data = {
-        "model": "Qwen/Qwen2.5-0.5B-Instruct", # Should match what was started
+        # Model name should match what's running in Parallax
+        # For Qwen3 models, disable thinking mode for faster responses
         "messages": messages,
         "max_tokens": 200,
-        "temperature": 0.7
+        "temperature": 0.7,
+        "stream": False,
+        "chat_template_kwargs": {"enable_thinking": False}
     }
     
     try:
-        response = requests.post(PARALLAX_API_URL, json=data, headers=headers)
+        log(f"Sending to Parallax: {prompt}")
+        response = requests.post(PARALLAX_API_URL, json=data, headers=headers, timeout=30)
+        log(f"Parallax status: {response.status_code}")
         if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+            result = response.json()
+            content = result['choices'][0]['message']['content']
+            log(f"Parallax response: {content[:100]}...")
+            return content
         else:
             log(f"LLM Error: {response.text}")
             return "I'm having trouble connecting to my brain."
+    except requests.exceptions.Timeout:
+        log("Connection Timeout - Parallax took too long")
+        return "I'm thinking too hard, give me a moment."
     except Exception as e:
         log(f"Connection Error: {e}")
         return "I can't reach the server."

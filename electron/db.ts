@@ -159,13 +159,26 @@ export function savePersonality(personality: {
   backstory?: string;
   traits?: string;
   voice_settings?: string;
+  voice_style?: string;
+  response_style?: string;
   system_prompt?: string;
 }) {
+  // Ensure all optional fields have default values to avoid named parameter errors
+  // Handle both naming conventions from frontend (voice_style) and database (voice_settings)
+  const data = {
+    device_id: personality.device_id,
+    name: personality.name,
+    backstory: personality.backstory || '',
+    traits: personality.traits || '',
+    voice_settings: personality.voice_settings || personality.voice_style || '',
+    system_prompt: personality.system_prompt || personality.response_style || ''
+  };
+  
   const stmt = db.prepare(`
     INSERT INTO personalities (device_id, name, backstory, traits, voice_settings, system_prompt, updated_at)
     VALUES (@device_id, @name, @backstory, @traits, @voice_settings, @system_prompt, CURRENT_TIMESTAMP)
   `);
-  stmt.run(personality);
+  stmt.run(data);
 }
 
 export function getPersonality(device_id: string) {

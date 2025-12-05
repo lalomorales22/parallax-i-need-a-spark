@@ -17,7 +17,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [personalityPreset, setPersonalityPreset] = useState('custom');
   const [role, setRole] = useState<'host' | 'client' | null>(null);
   const [hostIp, setHostIp] = useState('');
-  const [model, setModel] = useState('Qwen/Qwen2.5-0.5B-Instruct');
+  const [model, setModel] = useState('Qwen/Qwen3-0.6B');
   const [animating, setAnimating] = useState(false);
 
   const presetPersonalities = {
@@ -134,7 +134,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             <p style={{ fontSize: '14px', opacity: 0.8, marginBottom: '40px' }}>
               Welcome to Parallax Voice Assistant
             </p>
-            <p style={{ marginBottom: '20px', fontSize: '16px' }}>What should I call you?</p>
+            <p style={{ marginBottom: '20px', fontSize: '16px' }}>What do you want to call me?</p>
             <input
               type="text"
               placeholder="Enter AI Name (e.g., Nova, Atlas, Echo)"
@@ -163,7 +163,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         {step === 2 && (
           <>
             <h2 style={{ textShadow: '0 0 10px #00ffcc', marginBottom: '20px' }}>
-              PERSONALITY MATRIX
+              PERSONALITY
             </h2>
             <p style={{ marginBottom: '20px', opacity: 0.9 }}>
               Define {name}'s core personality and behavior
@@ -289,11 +289,11 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   padding: '20px',
                   textAlign: 'left'
                 }}>
-                  <p style={{ marginBottom: '10px' }}>✓ Server will start on port 8888</p>
+                  <p style={{ marginBottom: '10px' }}>✓ Parallax scheduler runs on port 3001</p>
                   <p style={{ marginBottom: '10px' }}>✓ Other devices can connect to this host</p>
                   <p style={{ marginBottom: '10px' }}>✓ Model inference will run on this machine</p>
                   <p style={{ marginTop: '20px', fontSize: '12px', opacity: 0.7 }}>
-                    After setup, you'll receive connection details to share with client devices
+                    Run 'parallax run -m Qwen/Qwen3-0.6B' in terminal before starting
                   </p>
                 </div>
               </>
@@ -307,7 +307,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                 </p>
                 <input
                   type="text"
-                  placeholder="Enter Host IP (e.g., 192.168.1.100:8888)"
+                  placeholder="Enter Scheduler Peer ID or Host IP"
                   value={hostIp}
                   onChange={(e) => setHostIp(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && !getButtonDisabled() && handleNext()}
@@ -361,13 +361,13 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                     boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
                   }}
                 >
-                  <option value="Qwen/Qwen2.5-0.5B-Instruct">Qwen 2.5 0.5B (Fast, Light)</option>
-                  <option value="Qwen/Qwen2.5-1.5B-Instruct">Qwen 2.5 1.5B (Balanced)</option>
+                  <option value="Qwen/Qwen3-0.6B">Qwen3 0.6B (Smallest, Fast)</option>
+                  <option value="Qwen/Qwen3-1.7B">Qwen3 1.7B (Light)</option>
+                  <option value="Qwen/Qwen3-4B">Qwen3 4B (Balanced)</option>
                   <option value="meta-llama/Llama-3.2-3B-Instruct">Llama 3.2 3B (Powerful)</option>
-                  <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral 7B (Advanced)</option>
                 </select>
                 <p style={{ marginTop: '15px', fontSize: '12px', opacity: 0.7 }}>
-                  Model will be downloaded on first use. Larger models require more RAM and compute.
+                  Model will be downloaded on first run via Parallax. Smaller models work better on non-GPU machines.
                 </p>
               </>
             ) : (

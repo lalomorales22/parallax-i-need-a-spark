@@ -78,7 +78,7 @@ class NetworkDiscovery:
 
     SERVICE_TYPE = "_spark._tcp.local."
 
-    def __init__(self, device_name: str, port: int = 8888, role: str = "host"):
+    def __init__(self, device_name: str, port: int = 3001, role: str = "host"):
         self.device_name = device_name
         self.port = port
         self.role = role
