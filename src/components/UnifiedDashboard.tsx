@@ -141,8 +141,14 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
       case 'controls':
         return (
           <ControlsTab
-            onStartHost={onStartHost}
-            onStartClient={onStartClient}
+            onStartHost={() => {
+              onStartHost();
+              setSparkMode('host');
+            }}
+            onStartClient={() => {
+              onStartClient();
+              setSparkMode('client');
+            }}
             onStartVoice={onStartVoice}
             autoListen={autoListen}
             onAutoListenChange={onAutoListenChange}
