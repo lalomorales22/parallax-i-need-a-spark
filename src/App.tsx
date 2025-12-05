@@ -25,28 +25,40 @@ function App() {
       return;
     }
 
-    window.ipcRenderer.getSetting('setup_complete').then((val) => {
+    window.ipcRenderer.getSetting('setup_complete').then(async (val) => {
       if (val === 'true') {
         setIsSetup(true);
         // Load name
-        window.ipcRenderer.getSetting('assistant_name').then((name) => {
-          if (name) {
-            setAssistantName(name);
-            setCurrentDeviceId(name); // Use assistant name as device ID
-          }
-        });
+        const name = await window.ipcRenderer.getSetting('assistant_name');
+        if (name) {
+          setAssistantName(name);
+          setCurrentDeviceId(name); // Use assistant name as device ID
+        }
 
         // Load visualization settings
-        window.ipcRenderer.getSetting('viz_settings').then((settingsStr) => {
-          if (settingsStr) {
-            try {
-              const loadedSettings = JSON.parse(settingsStr);
-              setVizSettings({ ...defaultVisualizationSettings, ...loadedSettings });
-            } catch (e) {
-              console.error('Failed to parse viz settings:', e);
-            }
+        const settingsStr = await window.ipcRenderer.getSetting('viz_settings');
+        if (settingsStr) {
+          try {
+            const loadedSettings = JSON.parse(settingsStr);
+            setVizSettings({ ...defaultVisualizationSettings, ...loadedSettings });
+          } catch (e) {
+            console.error('Failed to parse viz settings:', e);
           }
-        });
+        }
+        
+        // Auto-start network discovery if SPARK_MODE is set
+        try {
+          const sparkMode = await window.ipcRenderer.invoke('get-spark-mode');
+          if (sparkMode === 'host' || sparkMode === 'client') {
+            console.log(`Auto-starting network discovery as ${sparkMode}...`);
+            const personality = await window.ipcRenderer.getSetting('assistant_personality') || '';
+            const model = await window.ipcRenderer.getSetting('model') || 'Qwen/Qwen3-0.6B';
+            await window.ipcRenderer.startNetworkDiscovery(name || 'Spark', sparkMode, personality, model);
+            console.log('Network discovery started automatically');
+          }
+        } catch (e) {
+          console.error('Failed to auto-start network discovery:', e);
+        }
       }
       setLoading(false);
     });

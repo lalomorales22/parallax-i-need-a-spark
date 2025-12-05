@@ -63,4 +63,9 @@ echo ""
 export SPARK_MODE=client
 export PARALLAX_HOST="$PARALLAX_HOST"
 
+# Also save to a file that Electron can read directly
+echo "$PARALLAX_HOST" > "$SCRIPT_DIR/.parallax_host"
+
+echo "Environment: SPARK_MODE=$SPARK_MODE, PARALLAX_HOST=$PARALLAX_HOST"
+
 npm run dev

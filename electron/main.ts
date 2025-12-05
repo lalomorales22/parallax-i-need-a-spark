@@ -269,7 +269,28 @@ app.whenReady().then(() => {
       scriptPath = path.join(process.resourcesPath, 'python_bridge/voice_assistant.py');
     }
     const pythonPath = findPythonPath();
-    const parallaxHost = process.env.PARALLAX_HOST || 'localhost';
+    
+    // Get host from environment or try to read from .parallax_host file
+    let parallaxHost = process.env.PARALLAX_HOST || '';
+    if (!parallaxHost || parallaxHost === 'localhost') {
+      // Try to read from .parallax_host file
+      const fs = require('fs');
+      const hostFilePath = path.join(__dirname, '..', '.parallax_host');
+      try {
+        if (fs.existsSync(hostFilePath)) {
+          parallaxHost = fs.readFileSync(hostFilePath, 'utf8').trim();
+          console.log(`Read host from .parallax_host: ${parallaxHost}`);
+        }
+      } catch (e) {
+        console.log('Could not read .parallax_host file');
+      }
+    }
+    
+    // Default to localhost if still not set
+    if (!parallaxHost) {
+      parallaxHost = 'localhost';
+    }
+    
     console.log(`Voice Assistant using Python: ${pythonPath}`);
     console.log(`Voice Assistant connecting to Parallax at: ${parallaxHost}:3001`);
 

@@ -14553,7 +14553,22 @@ require$$1$4.app.whenReady().then(() => {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/voice_assistant.py");
     }
     const pythonPath = findPythonPath();
-    const parallaxHost = process.env.PARALLAX_HOST || "localhost";
+    let parallaxHost = process.env.PARALLAX_HOST || "";
+    if (!parallaxHost || parallaxHost === "localhost") {
+      const fs2 = require("fs");
+      const hostFilePath = path$m.join(__dirname, "..", ".parallax_host");
+      try {
+        if (fs2.existsSync(hostFilePath)) {
+          parallaxHost = fs2.readFileSync(hostFilePath, "utf8").trim();
+          console.log(`Read host from .parallax_host: ${parallaxHost}`);
+        }
+      } catch (e) {
+        console.log("Could not read .parallax_host file");
+      }
+    }
+    if (!parallaxHost) {
+      parallaxHost = "localhost";
+    }
     console.log(`Voice Assistant using Python: ${pythonPath}`);
     console.log(`Voice Assistant connecting to Parallax at: ${parallaxHost}:3001`);
     let pyshell = new PythonShell_1(scriptPath, {
