@@ -128,13 +128,45 @@ class NetworkDiscovery:
         for callback in self.device_callbacks:
             callback('lost', device.to_dict())
 
+    def _get_local_ip(self) -> str:
+        """Get the local network IP address (not 127.0.0.1)"""
+        # Method 1: Connect to an external address to determine local IP
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.settimeout(0.1)
+            # Doesn't actually connect, just determines the right interface
+            s.connect(('8.8.8.8', 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+            if local_ip and not local_ip.startswith('127.'):
+                return local_ip
+        except:
+            pass
+        
+        # Method 2: Use psutil to find the first non-loopback interface
+        try:
+            for iface, addrs in psutil.net_if_addrs().items():
+                if iface == 'lo' or iface.startswith('lo'):
+                    continue
+                for addr in addrs:
+                    if addr.family == socket.AF_INET and not addr.address.startswith('127.'):
+                        return addr.address
+        except:
+            pass
+        
+        # Method 3: Fallback to hostname lookup
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        return local_ip
+
     def start_broadcasting(self, personality: str = "", model: str = ""):
         """Start broadcasting this device's presence on the network"""
         self.zeroconf = Zeroconf()
 
         # Get local IP
         hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
+        local_ip = self._get_local_ip()
+        print(f"LOG: Detected local IP: {local_ip}")
 
         # Create service info with device metadata
         properties = {
@@ -201,29 +233,45 @@ class NetworkDiscovery:
 
 
 if __name__ == "__main__":
-    # Test the network discovery
+    # Network discovery service for Spark Voice Assistant
     import sys
+    import json
 
-    device_name = sys.argv[1] if len(sys.argv) > 1 else "TestSpark"
+    device_name = sys.argv[1] if len(sys.argv) > 1 else "Spark"
     role = sys.argv[2] if len(sys.argv) > 2 else "host"
+
+    print(f"LOG: Starting network discovery for {device_name} as {role}")
+    sys.stdout.flush()
 
     discovery = NetworkDiscovery(device_name, role=role)
 
-    def print_devices(action, device):
-        print(f"{action.upper()}: {device}")
+    def on_device_update(action, device):
+        """Output device updates in JSON format for Electron to parse"""
+        output = f"{action.upper()}: {json.dumps(device)}"
+        print(output)
+        sys.stdout.flush()
 
-    discovery.register_device_callback(print_devices)
-    discovery.start_broadcasting(personality="Test Device", model="Llama-3")
-    discovery.start_discovery()
-
+    discovery.register_device_callback(on_device_update)
+    
     try:
-        print("Discovering devices... (Ctrl+C to stop)")
+        discovery.start_broadcasting(personality="", model="")
+        discovery.start_discovery()
+        
+        print("LOG: Network discovery running...")
+        sys.stdout.flush()
+        
+        # Keep running and periodically report discovered devices
         while True:
-            time.sleep(5)
+            time.sleep(10)
             devices = discovery.get_discovered_devices()
-            print(f"\nCurrently discovered devices: {len(devices)}")
-            for d in devices:
-                print(f"  - {d['name']} ({d['address']}:{d['port']}) - {d['role']}")
+            if devices:
+                print(f"LOG: Currently see {len(devices)} device(s)")
+                for d in devices:
+                    print(f"DEVICE: {json.dumps(d)}")
+                sys.stdout.flush()
     except KeyboardInterrupt:
-        print("\nStopping...")
+        print("LOG: Stopping network discovery...")
         discovery.stop()
+    except Exception as e:
+        print(f"ERROR: {e}")
+        sys.stdout.flush()

@@ -350,48 +350,66 @@ app.whenReady().then(() => {
 
   ipcMain.handle('start-network-discovery', (_event, deviceName, role, personality, model) => {
     console.log("Starting Network Discovery...");
+    console.log(`  Device: ${deviceName}, Role: ${role}`);
+
+    // Stop any existing discovery process
+    if (networkDiscoveryProcess) {
+      try {
+        networkDiscoveryProcess.kill();
+      } catch (e) {}
+      networkDiscoveryProcess = null;
+    }
 
     let scriptPath = path.join(__dirname, '../python_bridge/network_discovery.py');
     if (app.isPackaged) {
       scriptPath = path.join(process.resourcesPath, 'python_bridge/network_discovery.py');
     }
 
-    const pythonPath = 'python3';
+    // Use the same Python path as other scripts
+    const pythonPath = findPythonPath();
+    console.log(`  Using Python: ${pythonPath}`);
 
     networkDiscoveryProcess = new PythonShell(scriptPath, {
       mode: 'text',
       pythonPath: pythonPath,
       pythonOptions: ['-u'],
-      args: [deviceName, role]
+      args: [deviceName || 'Spark', role || 'client']
     });
 
     networkDiscoveryProcess.on('message', function (message) {
-      console.log(message);
+      console.log(`Network Discovery: ${message}`);
       win?.webContents.send('network-discovery-update', message);
 
       // Parse device updates and save to database
       if (message.startsWith('FOUND:') || message.startsWith('LOST:')) {
         try {
-          const data = JSON.parse(message.substring(message.indexOf('{}')));
-          if (message.startsWith('FOUND:')) {
-            upsertDevice({
-              device_id: data.name,
-              name: data.name,
-              address: data.address,
-              port: data.port,
-              role: data.role,
-              status: 'online',
-              personality: data.personality,
-              model: data.model
-            });
-          } else {
-            updateDeviceStatus(data.name, 'offline');
+          const jsonStart = message.indexOf('{');
+          if (jsonStart !== -1) {
+            const data = JSON.parse(message.substring(jsonStart));
+            if (message.startsWith('FOUND:')) {
+              upsertDevice({
+                device_id: data.name,
+                name: data.name,
+                address: data.address,
+                port: data.port,
+                role: data.role,
+                status: 'online',
+                personality: data.personality,
+                model: data.model
+              });
+            } else {
+              updateDeviceStatus(data.name, 'offline');
+            }
+            win?.webContents.send('devices-updated', getAllDevices());
           }
-          win?.webContents.send('devices-updated', getAllDevices());
         } catch (e) {
           console.error('Error parsing network discovery message:', e);
         }
       }
+    });
+
+    networkDiscoveryProcess.on('error', function (err) {
+      console.error('Network Discovery Error:', err);
     });
 
     return "Network discovery initiated";

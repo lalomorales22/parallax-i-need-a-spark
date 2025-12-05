@@ -19,8 +19,11 @@
 - 🔧 **Port Conflict Resolution** - Use `./run-client.sh IP --port 3005` if port 3000 is in use
 - 🖥️ **Mode Detection** - Dashboard now shows whether you're running as HOST or CLIENT
 - 💾 **Per-Device Database** - Each device maintains its own personality and settings
-- 🔊 **Audio Fix** - Using native `afplay` on macOS to avoid CoreAudio conflicts
+- 🔊 **Audio Fix** - Native `afplay` on macOS with FFmpeg fallback for reliable audio playback
 - 🛠️ **Native Module Support** - Automatic electron-rebuild for better-sqlite3 compatibility
+- 🌍 **Network Discovery** - mDNS/Bonjour auto-discovery now properly detects local network IP
+- 🔗 **Client Connectivity** - Clients now correctly connect to host IP (saves to `.parallax_host` file)
+- 🐍 **Venv Integration** - All Python scripts use the virtual environment automatically
 
 ## The Vision: A Network of Minds
 
@@ -67,7 +70,8 @@ The main interface features a cute lil ASCII orb that responds to audio and stat
 ### 🖥️ Distributed Intelligence
 - **Host Mode**: Acts as the central hub, coordinating compute resources via Parallax
 - **Client Mode**: Connects to the host to offload inference, allowing lightweight devices to run powerful models
-- **Network Auto-Discovery**: Devices find each other automatically via mDNS/Bonjour
+- **Network Auto-Discovery**: Devices find each other automatically via mDNS/Bonjour (uses `_spark._tcp.local.` service)
+- **Persistent Host Connection**: Clients remember host IP in `.parallax_host` file
 
 ### 🎨 Beautiful UI/UX
 - **Transparent Overlay**: Frameless Electron window that floats on your desktop
@@ -95,7 +99,7 @@ The main interface features a cute lil ASCII orb that responds to audio and stat
 | Backend | Node.js (Electron main), Python (Parallax) |
 | Database | SQLite via better-sqlite3 |
 | AI/ML | Parallax SDK, Open Source LLMs |
-| Voice | Google STT, Edge TTS |
+| Voice | SpeechRecognition (STT), Edge TTS |
 
 ## Quick Start (One-Line Install)
 
@@ -114,10 +118,11 @@ The installer automatically:
 - ✅ Runs `electron-rebuild` for native module compatibility
 
 **Supported Platforms:**
-- ✅ **macOS** (Intel & Apple Silicon)
-- ✅ **Debian/Ubuntu** (including Xubuntu)
-- ✅ **Arch Linux** (including OmarChy)
-- ✅ **Raspberry Pi OS** (Pi 4/5)
+- ✅ **macOS** (Intel & Apple Silicon M1/M2/M3/M4)
+- ✅ **Debian 13** (Trixie)
+- ✅ **Ubuntu/Xubuntu**
+- ✅ **Arch Linux** (including Omarchy)
+- ✅ **Raspberry Pi OS** (Pi Zero 2 W, Pi 4, Pi 5)
 - ✅ **Fedora**
 
 ## Prerequisites
@@ -152,14 +157,18 @@ On your other devices (laptops, Raspberry Pis, etc.):
 # Connect to host at 192.168.0.99
 ./run-client.sh 192.168.0.99
 
+# Or run without argument - it will prompt for host IP and save it
+./run-client.sh
+
 # If port 3000 is in use (e.g., by another service), specify a different port:
 ./run-client.sh 192.168.0.99 --port 3005
 ```
 
 The client will:
-1. Join the Parallax cluster as a compute node
-2. Start the Electron app with `SPARK_MODE=client`
-3. Send AI requests to the host's scheduler
+1. Save the host IP to `.parallax_host` for future sessions
+2. Join the Parallax cluster as a compute node
+3. Start the Electron app with `SPARK_MODE=client` and `PARALLAX_HOST` env var
+4. Send AI requests to the host's scheduler
 
 **Tip:** The dashboard shows your current mode (green = HOST, purple = CLIENT)
 
@@ -276,11 +285,12 @@ parallax-i-need-a-spark/
 │   │   └── ...
 │   └── types/               # TypeScript definitions
 ├── python_bridge/           # Python backend
-│   ├── host.py              # Parallax host server
+│   ├── host.py              # Parallax host server (auto-finds parallax CLI in venv)
 │   ├── client.py            # Parallax client worker
-│   ├── voice_assistant.py   # Voice processing
-│   ├── network_discovery.py # mDNS device discovery
+│   ├── voice_assistant.py   # Voice processing (uses PARALLAX_HOST env var)
+│   ├── network_discovery.py # mDNS device discovery (outputs JSON for Electron)
 │   └── model_manager.py     # Model management
+├── .parallax_host           # Stores host IP for client reconnection (created by run-client.sh)
 ├── package.json
 ├── vite.config.ts
 └── README.md
@@ -338,7 +348,8 @@ npm run test:coverage
 
 | Issue | Description | Solution |
 |-------|-------------|----------|
-| **CoreAudio conflicts** | pygame.mixer fails | We now use native `afplay` command - no pygame needed |
+| **CoreAudio conflicts** | pygame.mixer fails | We use native `afplay` with FFmpeg fallback for format conversion |
+| **AudioQueueStart failed** | afplay can't play certain formats | FFmpeg auto-converts audio to compatible WAV format |
 | **No audio output** | TTS not playing | Check System Preferences → Sound → Output |
 | **Microphone permission** | STT not working | Allow Terminal/Electron in Security & Privacy → Microphone |
 
@@ -365,10 +376,18 @@ parallax run --model Qwen/Qwen3-0.6B --host 0.0.0.0
 
 # 4. Test voice assistant standalone
 source parallax/venv/bin/activate
-python python_bridge/voice_assistant.py --host 192.168.0.99
+PARALLAX_HOST=192.168.0.99 python python_bridge/voice_assistant.py
 
 # 5. Check if Parallax is running
 curl http://localhost:3001/health
+
+# 6. Test network discovery
+source parallax/venv/bin/activate
+python python_bridge/network_discovery.py "MyDevice" "host"
+
+# 7. Reset client host IP
+rm .parallax_host
+./run-client.sh   # Will prompt for new IP
 ```
 
 ## Parallax API Reference
@@ -390,20 +409,22 @@ The voice assistant connects to Parallax at these endpoints:
 - [x] 6-step onboarding wizard
 - [x] SQLite persistence with better-sqlite3
 - [x] Unified settings dashboard with tabs
-- [x] Network discovery UI
+- [x] Network discovery UI with mDNS/Bonjour
 - [x] Personality editor
 - [x] Cross-platform build setup
-- [x] Universal install script (macOS, Linux, Pi)
-- [x] Host/client mode scripts
+- [x] Universal install script (macOS, Linux, Debian 13, Pi Zero/4/5, Omarchy)
+- [x] Host/client mode scripts with persistent host IP storage
 - [x] Port conflict resolution
-- [x] Mode detection in dashboard
+- [x] Mode detection in dashboard (HOST/CLIENT/Standalone)
 - [x] Per-device database separation
-- [x] Native audio playback (afplay on macOS)
+- [x] Native audio playback (afplay + FFmpeg fallback)
+- [x] Proper venv Python integration for all scripts
+- [x] Auto-detection of local network IP for mDNS broadcast
 
 ### In Progress 🔄
-- [ ] Voice input/output pipeline
-- [ ] Parallax model integration
-- [ ] Multi-device testing
+- [x] Voice input/output pipeline (working!)
+- [x] Parallax model integration (connected to scheduler)
+- [ ] Multi-device testing at scale
 - [ ] Competition demo video
 
 ### Planned 📋

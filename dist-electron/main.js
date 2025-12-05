@@ -14553,17 +14553,28 @@ require$$1$4.app.whenReady().then(() => {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/voice_assistant.py");
     }
     const pythonPath = findPythonPath();
+    const fs2 = require("fs");
     let parallaxHost = process.env.PARALLAX_HOST || "";
+    console.log(`PARALLAX_HOST env: "${parallaxHost}"`);
     if (!parallaxHost || parallaxHost === "localhost") {
-      const fs2 = require("fs");
-      const hostFilePath = path$m.join(__dirname, "..", ".parallax_host");
-      try {
-        if (fs2.existsSync(hostFilePath)) {
-          parallaxHost = fs2.readFileSync(hostFilePath, "utf8").trim();
-          console.log(`Read host from .parallax_host: ${parallaxHost}`);
+      const possiblePaths = [
+        path$m.join(__dirname, "..", ".parallax_host"),
+        path$m.join(require$$1$4.app.getAppPath(), ".parallax_host"),
+        path$m.join(process.cwd(), ".parallax_host")
+      ];
+      for (const hostFilePath of possiblePaths) {
+        try {
+          if (fs2.existsSync(hostFilePath)) {
+            const hostFromFile = fs2.readFileSync(hostFilePath, "utf8").trim();
+            if (hostFromFile && hostFromFile !== "localhost") {
+              parallaxHost = hostFromFile;
+              console.log(`Read host from ${hostFilePath}: ${parallaxHost}`);
+              break;
+            }
+          }
+        } catch (e) {
+          console.log(`Could not read ${hostFilePath}`);
         }
-      } catch (e) {
-        console.log("Could not read .parallax_host file");
       }
     }
     if (!parallaxHost) {
