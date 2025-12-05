@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import type { VisualizationSettings, WaveType, SymmetryMode, CharacterSet, ColorPreset } from '../types/visualization';
 
+// Get mode from environment (set by run-host.sh or run-client.sh)
+const SPARK_MODE = (window as any).SPARK_MODE || 'standalone';
+const PARALLAX_HOST = (window as any).PARALLAX_HOST || 'localhost';
+
 interface Device {
   device_id: string;
   name: string;
@@ -455,33 +459,66 @@ const ControlsTab: React.FC<{
       }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', opacity: 0.8, color: '#ff00ff' }}>NETWORK MODE</h3>
         
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button
-            onClick={onStartHost}
-            style={{
-              ...buttonStyle,
-              flex: 1,
-              borderColor: '#ff00ff',
-              color: '#ff00ff'
-            }}
-          >
-            🧠 Start as Host
-          </button>
-          <button
-            onClick={onStartClient}
-            style={{
-              ...buttonStyle,
-              flex: 1,
-              borderColor: '#ff00ff',
-              color: '#ff00ff'
-            }}
-          >
-            🔌 Start as Client
-          </button>
-        </div>
-        <p style={{ fontSize: '11px', opacity: 0.6, marginTop: '12px', marginBottom: 0 }}>
-          Host: Run the AI model locally. Client: Connect to a host for inference.
-        </p>
+        {/* Show current mode based on how the app was started */}
+        {SPARK_MODE === 'host' ? (
+          <div style={{
+            padding: '16px',
+            background: 'rgba(0, 255, 0, 0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(0, 255, 0, 0.3)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>🧠</div>
+            <div style={{ color: '#00ff00', fontWeight: 'bold' }}>Running as HOST</div>
+            <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '8px' }}>
+              Parallax scheduler is running. Clients can connect to this machine.
+            </div>
+          </div>
+        ) : SPARK_MODE === 'client' ? (
+          <div style={{
+            padding: '16px',
+            background: 'rgba(255, 0, 255, 0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 0, 255, 0.3)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔌</div>
+            <div style={{ color: '#ff00ff', fontWeight: 'bold' }}>Running as CLIENT</div>
+            <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '8px' }}>
+              Connected to host at {PARALLAX_HOST}:3001
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={onStartHost}
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  borderColor: '#ff00ff',
+                  color: '#ff00ff'
+                }}
+              >
+                🧠 Start as Host
+              </button>
+              <button
+                onClick={onStartClient}
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  borderColor: '#ff00ff',
+                  color: '#ff00ff'
+                }}
+              >
+                🔌 Start as Client
+              </button>
+            </div>
+            <p style={{ fontSize: '11px', opacity: 0.6, marginTop: '12px', marginBottom: 0 }}>
+              Tip: Use ./run-host.sh or ./run-client.sh for better control.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
