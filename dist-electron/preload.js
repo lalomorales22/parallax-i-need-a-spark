@@ -22,6 +22,8 @@ try {
     // Specific APIs
     getSetting: (key) => electron.ipcRenderer.invoke("get-setting", key),
     saveSetting: (key, value) => electron.ipcRenderer.invoke("save-setting", key, value),
+    getSparkMode: () => electron.ipcRenderer.invoke("get-spark-mode"),
+    getParallaxHost: () => electron.ipcRenderer.invoke("get-parallax-host"),
     startHost: () => electron.ipcRenderer.invoke("start-host"),
     startClient: () => electron.ipcRenderer.invoke("start-client"),
     startVoice: () => electron.ipcRenderer.invoke("start-voice"),

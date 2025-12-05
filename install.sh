@@ -27,12 +27,35 @@ detect_os() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         OS="macos"
         PKG_MANAGER="brew"
+        # Detect Apple Silicon vs Intel
+        if [[ $(uname -m) == "arm64" ]]; then
+            ARCH="arm64"
+            print_status "Detected Apple Silicon Mac"
+        else
+            ARCH="x64"
+            print_status "Detected Intel Mac"
+        fi
     elif [ -f /etc/debian_version ]; then
         OS="debian"
         PKG_MANAGER="apt"
+        # Check for specific Debian/Ubuntu variants
+        if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            if [[ "$ID" == "ubuntu" ]] || [[ "$ID_LIKE" == *"ubuntu"* ]]; then
+                print_status "Detected Ubuntu/Xubuntu variant"
+            elif [[ "$VERSION_ID" == "13"* ]]; then
+                print_status "Detected Debian 13 (Trixie)"
+            fi
+        fi
     elif [ -f /etc/arch-release ]; then
         OS="arch"
         PKG_MANAGER="pacman"
+        # Detect Omarchy (Arch-based)
+        if [ -f /etc/omarchy-release ] || grep -qi "omarchy" /etc/os-release 2>/dev/null; then
+            print_status "Detected Omarchy (Arch-based)"
+        else
+            print_status "Detected Arch Linux"
+        fi
     elif [ -f /etc/fedora-release ]; then
         OS="fedora"
         PKG_MANAGER="dnf"
@@ -42,9 +65,12 @@ detect_os() {
     fi
     
     # Detect Raspberry Pi
+    IS_RPI=false
     if [ -f /proc/device-tree/model ]; then
         if grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
             IS_RPI=true
+            RPI_MODEL=$(cat /proc/device-tree/model | tr -d '\0')
+            print_status "Detected: $RPI_MODEL"
         fi
     fi
     
@@ -62,33 +88,54 @@ install_system_deps() {
                 print_error "Homebrew not found. Install it first: https://brew.sh"
                 exit 1
             fi
-            brew install python@3.12 node portaudio ffmpeg
+            
+            # Install packages one by one to handle already-installed packages gracefully
+            for pkg in python@3.12 node portaudio ffmpeg; do
+                if brew list "$pkg" &>/dev/null; then
+                    print_status "$pkg is already installed, checking for updates..."
+                    brew upgrade "$pkg" 2>/dev/null || true
+                else
+                    print_status "Installing $pkg..."
+                    brew install "$pkg" 2>/dev/null || true
+                fi
+            done
+            
+            # Fix any linking issues
+            for pkg in python@3.12 node; do
+                if brew list "$pkg" &>/dev/null; then
+                    brew link --overwrite "$pkg" 2>/dev/null || true
+                fi
+            done
             ;;
         apt)
-            # Debian/Ubuntu/Raspberry Pi OS
+            # Debian/Ubuntu/Raspberry Pi OS/Xubuntu
             sudo apt update
             sudo apt install -y \
-                python3 python3-pip python3-venv \
+                python3 python3-pip python3-venv python3-dev \
                 nodejs npm \
                 portaudio19-dev python3-pyaudio \
                 ffmpeg libespeak-dev \
-                libasound2-dev
+                libasound2-dev \
+                build-essential \
+                git curl
             ;;
         pacman)
-            # Arch Linux / OmarChy
+            # Arch Linux / OmarChy / Omarchy
             sudo pacman -Syu --noconfirm \
-                python python-pip \
+                python python-pip python-virtualenv \
                 nodejs npm \
                 portaudio \
-                ffmpeg espeak-ng
+                ffmpeg espeak-ng \
+                base-devel git curl
             ;;
         dnf)
-            # Fedora
+            # Fedora / Debian 13+ style
             sudo dnf install -y \
-                python3 python3-pip python3-virtualenv \
+                python3 python3-pip python3-virtualenv python3-devel \
                 nodejs npm \
                 portaudio-devel \
-                ffmpeg espeak-ng
+                ffmpeg espeak-ng \
+                gcc gcc-c++ make git curl
             ;;
         *)
             print_warning "Unknown package manager. Please install manually:"
@@ -130,17 +177,37 @@ setup_python() {
     VENV_DIR="parallax/venv"
     PARALLAX_SRC="parallax/src"
     
-    # Create directories
+    # Create directories first
     mkdir -p parallax
     
-    # Create venv if it doesn't exist
+    # CRITICAL: Create venv FIRST before any pip operations
     if [ ! -d "$VENV_DIR" ]; then
+        print_status "Creating Python virtual environment at $VENV_DIR..."
         $PYTHON_CMD -m venv "$VENV_DIR"
+        if [ $? -ne 0 ]; then
+            print_error "Failed to create virtual environment!"
+            print_warning "Try: $PYTHON_CMD -m pip install --user virtualenv"
+            exit 1
+        fi
+        print_success "Virtual environment created"
+    else
+        print_status "Virtual environment already exists at $VENV_DIR"
     fi
     
-    # Activate venv
+    # Activate venv - ALL pip operations happen inside venv from here
+    print_status "Activating virtual environment..."
     source "$VENV_DIR/bin/activate"
     
+    # Verify we're in the venv
+    CURRENT_PYTHON=$(which python)
+    if [[ "$CURRENT_PYTHON" != *"$VENV_DIR"* ]]; then
+        print_error "Failed to activate virtual environment!"
+        print_warning "Expected python in $VENV_DIR but got $CURRENT_PYTHON"
+        exit 1
+    fi
+    print_success "Virtual environment activated: $CURRENT_PYTHON"
+    
+    # Upgrade pip inside venv
     pip install --upgrade pip
     
     # Clone Parallax SDK from source if not already present
@@ -149,7 +216,7 @@ setup_python() {
         git clone https://github.com/GradientHQ/parallax.git "$PARALLAX_SRC"
     else
         print_status "Parallax source already exists, updating..."
-        cd "$PARALLAX_SRC" && git pull && cd - > /dev/null
+        (cd "$PARALLAX_SRC" && git pull) || print_warning "Could not update Parallax source"
     fi
     
     # Install Parallax SDK from source
@@ -168,19 +235,35 @@ setup_python() {
     
     cd "$SCRIPT_DIR"
     
-    # Install voice assistant dependencies (always install these)
+    # Install voice assistant dependencies from requirements files
     print_status "Installing voice assistant dependencies..."
-    pip install SpeechRecognition edge-tts pyaudio requests
+    
+    if [ -f "python_bridge/requirements-voice.txt" ]; then
+        print_status "Installing from requirements-voice.txt..."
+        pip install -r python_bridge/requirements-voice.txt || print_warning "Some voice packages failed"
+    fi
+    
+    if [ -f "python_bridge/requirements-phase2.txt" ]; then
+        print_status "Installing from requirements-phase2.txt..."
+        pip install -r python_bridge/requirements-phase2.txt || print_warning "Some phase2 packages failed"
+    fi
+    
+    # Fallback: Install essential packages directly if requirements files missing
+    pip install SpeechRecognition edge-tts pyaudio requests zeroconf psutil huggingface-hub 2>/dev/null || true
     
     # Verify installation
     print_status "Verifying installation..."
-    python -c "import speech_recognition; print('✓ SpeechRecognition OK')" || print_error "SpeechRecognition failed"
-    python -c "import edge_tts; print('✓ edge-tts OK')" || print_error "edge-tts failed"
-    python -c "import requests; print('✓ requests OK')" || print_error "requests failed"
+    python -c "import speech_recognition; print('✓ SpeechRecognition OK')" || print_warning "SpeechRecognition not available"
+    python -c "import edge_tts; print('✓ edge-tts OK')" || print_warning "edge-tts not available"
+    python -c "import requests; print('✓ requests OK')" || print_warning "requests not available"
+    python -c "import zeroconf; print('✓ zeroconf OK')" || print_warning "zeroconf not available (network discovery)"
+    python -c "import psutil; print('✓ psutil OK')" || print_warning "psutil not available (system stats)"
+    
+    # Show venv path for user reference
+    print_success "Python environment ready at: $SCRIPT_DIR/$VENV_DIR"
+    print_status "To activate manually: source $VENV_DIR/bin/activate"
     
     deactivate
-    
-    print_success "Python environment ready"
 }
 
 # Install Node.js dependencies
@@ -190,6 +273,14 @@ setup_node() {
     if ! command -v npm &> /dev/null; then
         print_error "npm not found. Please install Node.js"
         exit 1
+    fi
+    
+    # Check node version
+    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -lt 18 ]; then
+        print_warning "Node.js version is $NODE_VERSION, recommend v18 or higher"
+    else
+        print_success "Node.js version: $(node -v)"
     fi
     
     npm install
@@ -284,24 +375,52 @@ main() {
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo ""
     
+    # Get local IP for reference
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || echo "unknown")
+    else
+        LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "unknown")
+    fi
+    
     if [ "$CLIENT_MODE" = true ]; then
         echo "To join an existing Spark network:"
-        echo "  ./run-client.sh"
-    else
-        echo "To start as HOST (runs the AI model):"
-        echo "  1. Start Parallax scheduler: parallax run --model Qwen/Qwen3-0.6B"
-        echo "  2. Run the app: ./run.sh"
+        echo "  ./run-client.sh <HOST_IP>"
         echo ""
-        echo "To start as CLIENT (joins host):"
-        echo "  ./run-client.sh"
+        echo "Example: ./run-client.sh 192.168.0.99"
+    else
+        echo "┌─────────────────────────────────────────────────────────────┐"
+        echo "│  To start as HOST (this machine runs the AI model):        │"
+        echo "│                                                             │"
+        echo "│    ./run-host.sh                                            │"
+        echo "│                                                             │"
+        echo "│  Your IP: $LOCAL_IP                                         │"
+        echo "│  Other devices connect with: ./run-client.sh $LOCAL_IP      │"
+        echo "└─────────────────────────────────────────────────────────────┘"
+        echo ""
+        echo "┌─────────────────────────────────────────────────────────────┐"
+        echo "│  To start as CLIENT (joins another host):                   │"
+        echo "│                                                             │"
+        echo "│    ./run-client.sh <HOST_IP>                                │"
+        echo "│                                                             │"
+        echo "│  Example: ./run-client.sh 192.168.0.99                      │"
+        echo "└─────────────────────────────────────────────────────────────┘"
     fi
     echo ""
     
     if [ "$IS_RPI" = true ]; then
-        print_warning "Raspberry Pi detected!"
-        print_warning "For best performance, use smaller models (0.6B-1B)"
-        print_warning "Consider running as client and offloading to a more powerful host"
+        echo "┌─────────────────────────────────────────────────────────────┐"
+        echo "│  🍓 Raspberry Pi Detected!                                  │"
+        echo "│                                                             │"
+        echo "│  • For best performance, run as CLIENT                      │"
+        echo "│  • Connect to a Mac Mini or powerful host                   │"
+        echo "│  • If running as host, use smaller models (0.6B-1B)         │"
+        echo "└─────────────────────────────────────────────────────────────┘"
     fi
+    
+    echo ""
+    print_success "Python venv: parallax/venv/"
+    print_success "Activate with: source parallax/venv/bin/activate"
+    echo ""
 }
 
 main "$@"

@@ -13,11 +13,13 @@
 
 ## ✨ What's New (Latest Update)
 
-- 🎨 **Unified Dashboard** - All settings consolidated into one beautiful tabbed interface
-- 🎤 **Auto Listen Mode** - Continuous voice listening with pulsing visual feedback
-- 🖥️ **Clean Main Interface** - Just the orb, name, status, and a single "Tap to Speak" button
-- ⚙️ **Tabbed Settings** - Visuals, Controls, Network, Personality, and Logs all in one place
-- 🎯 **Improved UX** - Better click handling, themed scrollbars, and smoother interactions
+- 🚀 **Universal Installer** - Single `install.sh` for macOS, Linux, Raspberry Pi with auto-dependency detection
+- 🌐 **Host/Client Scripts** - Easy `run-host.sh` and `run-client.sh` for distributed setup
+- 🔧 **Port Conflict Resolution** - Use `./run-client.sh IP --port 3005` if port 3000 is in use
+- 🖥️ **Mode Detection** - Dashboard now shows whether you're running as HOST or CLIENT
+- 💾 **Per-Device Database** - Each device maintains its own personality and settings
+- 🔊 **Audio Fix** - Using native `afplay` on macOS to avoid CoreAudio conflicts
+- 🛠️ **Native Module Support** - Automatic electron-rebuild for better-sqlite3 compatibility
 
 ## The Vision: A Network of Minds
 
@@ -88,7 +90,14 @@ cd parallax-i-need-a-spark
 ./install.sh
 ```
 
-That's it! The installer works on:
+The installer automatically:
+- ✅ Detects your OS and package manager
+- ✅ Installs Node.js, Python 3.12, and system dependencies
+- ✅ Clones Parallax SDK from [GradientHQ/parallax](https://github.com/GradientHQ/parallax)
+- ✅ Creates a Python virtual environment at `parallax/venv/`
+- ✅ Runs `electron-rebuild` for native module compatibility
+
+**Supported Platforms:**
 - ✅ **macOS** (Intel & Apple Silicon)
 - ✅ **Debian/Ubuntu** (including Xubuntu)
 - ✅ **Arch Linux** (including OmarChy)
@@ -105,37 +114,56 @@ The install script will handle the rest!
 
 ## Running as HOST (Main Machine)
 
-Your most powerful machine should be the host (e.g., Mac Mini 24GB):
+Your most powerful machine should be the host (e.g., Mac Mini 24GB, IP 192.168.0.99):
 
 ```bash
-# 1. Start Parallax with a model
-source parallax/venv/bin/activate
-parallax run --model Qwen/Qwen3-0.6B --host 0.0.0.0
+# Easy way - uses run-host.sh script
+./run-host.sh
 
-# 2. In another terminal, start Spark
-./run.sh
+# What it does:
+# 1. Activates parallax/venv
+# 2. Starts Parallax scheduler with Qwen3-0.6B
+# 3. Starts Electron app with SPARK_MODE=host
 ```
+
+The host runs the Parallax scheduler on port 3001 and accepts client connections on port 3000.
 
 ## Running as CLIENT (Other Machines)
 
 On your other devices (laptops, Raspberry Pis, etc.):
 
 ```bash
-./run-client.sh
+# Connect to host at 192.168.0.99
+./run-client.sh 192.168.0.99
+
+# If port 3000 is in use (e.g., by another service), specify a different port:
+./run-client.sh 192.168.0.99 --port 3005
 ```
 
-The client will auto-discover and connect to your host!
+The client will:
+1. Join the Parallax cluster as a compute node
+2. Start the Electron app with `SPARK_MODE=client`
+3. Send AI requests to the host's scheduler
+
+**Tip:** The dashboard shows your current mode (green = HOST, purple = CLIENT)
 
 ## Multi-Device Setup Guide
 
-Here's how to set up your home network:
+Here's an example home network setup:
 
-| Device | Role | Recommended Model |
-|--------|------|-------------------|
-| Mac Mini (24GB) | **HOST** | Qwen3-4B or Qwen3-1.7B |
-| MacBook Pro M1 | Client or Backup Host | Qwen3-1.7B |
-| Raspberry Pi 5 | Client | (offloads to host) |
-| Linux Laptops | Client or Node | (joins Parallax network) |
+| Device | Role | IP | Command |
+|--------|------|-----|---------|
+| Mac Mini (24GB) | **HOST** | 192.168.0.99 | `./run-host.sh` |
+| MacBook Pro M1 | Client | DHCP | `./run-client.sh 192.168.0.99` |
+| Raspberry Pi 5 | Client | DHCP | `./run-client.sh 192.168.0.99` |
+| Linux Laptop | Client | DHCP | `./run-client.sh 192.168.0.99 --port 3005` |
+
+### Per-Device Database
+
+Each device maintains its **own SQLite database** (`spark.db`). This means:
+- Each device can have a unique AI personality (name, backstory, traits)
+- Settings and preferences are stored locally
+- Databases are NOT synced - this is intentional for privacy and personalization
 
 ### Adding Compute Nodes
 
@@ -144,7 +172,7 @@ Want more power? Add machines as Parallax nodes:
 ```bash
 # On any machine after installing:
 source parallax/venv/bin/activate
-parallax join  # Auto-discovers and joins the host
+parallax join --host 192.168.0.99  # Join the host's cluster
 ```
 
 ## Manual Installation
@@ -199,10 +227,15 @@ Click the gear icon to access all settings in a tabbed interface:
 | Tab | Description |
 |-----|-------------|
 | 🎨 **Visuals** | Customize orb appearance - wave type, colors, symmetry, rotation |
-| 🎮 **Controls** | Start Host/Client, Voice Assistant, Auto Listen toggle |
-| 🌐 **Network** | View connected devices and their status |
+| 🎮 **Controls** | Voice Assistant toggle, Auto Listen mode |
+| 🌐 **Network** | View connected devices, current mode (HOST/CLIENT indicator) |
 | ✨ **Personality** | Edit AI name, backstory, traits, voice style |
 | 📊 **Logs** | View system logs and debug information |
+
+**Mode Indicator:** The Network tab shows your current mode:
+- 🟢 **Running as HOST** - You're the main coordinator
+- 🟣 **Running as CLIENT** - Connected to a host at [IP]
+- ⚪ **Standalone** - Not connected to Parallax cluster
 
 ### Window Controls
 
@@ -241,13 +274,24 @@ parallax-i-need-a-spark/
 
 ### Scripts
 
-\`\`\`bash
-npm run dev          # Start in development mode
-npm run build        # Build for production
-npm test             # Run tests
-npm run test:ui      # Run tests with UI
-npm run test:coverage # Run tests with coverage
-\`\`\`
+```bash
+# Installation & Setup
+./install.sh              # Install everything (deps, Parallax, npm, electron-rebuild)
+
+# Running
+./run-host.sh             # Start as HOST with Parallax scheduler
+./run-client.sh <IP>      # Start as CLIENT, connect to host at <IP>
+./run-client.sh <IP> --port 3005  # Use custom port if 3000 is busy
+./run.sh                  # Standalone mode (no Parallax)
+
+# Development
+npm run dev               # Start in development mode
+npm run build             # Build for production
+npm run rebuild           # Rebuild native modules for Electron
+npm test                  # Run tests
+npm run test:ui           # Run tests with UI
+npm run test:coverage     # Run tests with coverage
+```
 
 ### Testing
 
@@ -262,59 +306,54 @@ npm test -- --watch
 npm run test:coverage
 \`\`\`
 
-## Known Issues & TODOs
+## Known Issues & Solutions
 
-### 🔴 Critical (Must Fix for Voice to Work)
+### 🔴 Critical Issues
 
 | Issue | Description | Solution |
 |-------|-------------|----------|
-| **Parallax not running** | Voice says "I can't reach the server" | Start Parallax first: `parallax run -m Qwen/Qwen3-0.6B -n 1` |
-| **pygame.mixer error** | TTS audio playback fails on macOS | Run `brew install sdl2 sdl2_mixer && pip install pygame --no-cache-dir` |
-| **Connection refused on port 3001** | API not accessible | Ensure Parallax scheduler is running and model is loaded |
-| **Missing Python modules** | ImportError on startup | Run `pip install SpeechRecognition pyaudio edge-tts pygame` |
+| **Parallax not running** | Voice says "I can't reach the server" | Run `./run-host.sh` on your main machine first |
+| **Connection refused on port 3001** | API not accessible | Ensure Parallax scheduler is running on the host |
+| **Port 3000 already in use** | Another service using the port | Use `./run-client.sh IP --port 3005` |
+| **better-sqlite3 module error** | NODE_MODULE_VERSION mismatch | Run `npm run rebuild` or reinstall with `./install.sh` |
+| **Python version error** | Parallax requires >=3.11,<3.14 | Install Python 3.12: `brew install python@3.12` (macOS) |
 
-### 🟡 Medium Priority
+### 🟡 Audio Issues (macOS)
 
-| Issue | Description | Status |
-|-------|-------------|--------|
-| **Window dragging difficult** | Hard to find drag area on transparent window | Need to add a visible drag handle at top |
-| **Model download unclear** | No progress indicator during model download | Parallax downloads models on first run |
-| **No "Allow Microphone" prompt** | Browser permission not requested | Need to implement permission request |
-| **Host mode via UI** | "Start Host" button needs Parallax installed | Run Parallax manually in terminal for now |
+| Issue | Description | Solution |
+|-------|-------------|----------|
+| **CoreAudio conflicts** | pygame.mixer fails | We now use native `afplay` command - no pygame needed |
+| **No audio output** | TTS not playing | Check System Preferences → Sound → Output |
+| **Microphone permission** | STT not working | Allow Terminal/Electron in Security & Privacy → Microphone |
 
-### 🟢 Low Priority / Enhancements
+### 🟢 Database Issues
 
-| Issue | Description |
-|-------|-------------|
-| Window size persistence | Window doesn't remember size/position |
-| Keyboard shortcuts | No hotkeys for common actions |
-| System tray | No minimize to tray option |
-| Wake word | "Hey Spark" activation not implemented |
+| Issue | Description | Solution |
+|-------|-------------|----------|
+| **Foreign key constraint** | Error saving personality | Fixed - personality save now creates device entry first |
+| **spark.db synced across devices** | Wrong database on git pull | Fixed - `spark.db` is now in `.gitignore` |
 
 ### Quick Fix Commands
 
-\`\`\`bash
-# 1. Install Parallax (one-time setup)
-git clone https://github.com/GradientHQ/parallax.git ~/parallax
-cd ~/parallax
-python3 -m venv venv
-source venv/bin/activate
-pip install -e '.[mac]'  # For macOS
+```bash
+# 1. Full reinstall (if things are broken)
+rm -rf node_modules parallax/venv
+./install.sh
 
-# 2. Fix pygame audio on macOS
-brew install sdl2 sdl2_mixer
-pip install pygame --no-cache-dir
+# 2. Just rebuild native modules
+npm run rebuild
 
-# 3. Install voice dependencies
-pip install SpeechRecognition pyaudio edge-tts
+# 3. Start fresh with Parallax
+source parallax/venv/bin/activate
+parallax run --model Qwen/Qwen3-0.6B --host 0.0.0.0
 
-# 4. Start Parallax (run this BEFORE the Spark app)
-parallax run -m Qwen/Qwen3-0.6B -n 1 --host 0.0.0.0
+# 4. Test voice assistant standalone
+source parallax/venv/bin/activate
+python python_bridge/voice_assistant.py --host 192.168.0.99
 
-# 5. In a new terminal, start Spark
-cd /path/to/parallax-i-need-a-spark
-npm run dev
-\`\`\`
+# 5. Check if Parallax is running
+curl http://localhost:3001/health
+```
 
 ## Parallax API Reference
 
@@ -333,11 +372,17 @@ The voice assistant connects to Parallax at these endpoints:
 - [x] Electron + React + TypeScript foundation
 - [x] ASCII orb visualization with multiple effects
 - [x] 6-step onboarding wizard
-- [x] SQLite persistence
-- [x] Unified settings dashboard
+- [x] SQLite persistence with better-sqlite3
+- [x] Unified settings dashboard with tabs
 - [x] Network discovery UI
 - [x] Personality editor
 - [x] Cross-platform build setup
+- [x] Universal install script (macOS, Linux, Pi)
+- [x] Host/client mode scripts
+- [x] Port conflict resolution
+- [x] Mode detection in dashboard
+- [x] Per-device database separation
+- [x] Native audio playback (afplay on macOS)
 
 ### In Progress 🔄
 - [ ] Voice input/output pipeline
