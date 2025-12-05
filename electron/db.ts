@@ -163,6 +163,17 @@ export function savePersonality(personality: {
   response_style?: string;
   system_prompt?: string;
 }) {
+  // Ensure the device exists first (to satisfy foreign key constraint)
+  const existingDevice = db.prepare('SELECT device_id FROM devices WHERE device_id = ?').get(personality.device_id);
+  if (!existingDevice) {
+    // Create a minimal device entry
+    const insertDevice = db.prepare(`
+      INSERT INTO devices (device_id, name, role, status)
+      VALUES (?, ?, 'local', 'online')
+    `);
+    insertDevice.run(personality.device_id, personality.name);
+  }
+
   // Ensure all optional fields have default values to avoid named parameter errors
   // Handle both naming conventions from frontend (voice_style) and database (voice_settings)
   const data = {
