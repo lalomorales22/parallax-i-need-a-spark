@@ -42,25 +42,28 @@ const NetworkDashboard: React.FC<NetworkDashboardProps> = ({ onClose }) => {
     loadLocalModels();
 
     // Listen for device updates
-    window.ipcRenderer.on('devices-updated', (_event, updatedDevices) => {
+    const devicesListener = (_event: any, updatedDevices: Device[]) => {
       setDevices(updatedDevices);
-    });
+    };
+    window.ipcRenderer.on('devices-updated', devicesListener);
 
     // Listen for model download progress
-    window.ipcRenderer.on('model-download-progress', (_event, progress) => {
+    const progressListener = (_event: any, progress: string) => {
       setDownloadProgress(progress);
-    });
+    };
+    window.ipcRenderer.on('model-download-progress', progressListener);
 
-    window.ipcRenderer.on('model-download-complete', (_event, modelId) => {
+    const completeListener = (_event: any, _modelId: string) => {
       setDownloading(null);
       setDownloadProgress('');
       loadLocalModels();
-    });
+    };
+    window.ipcRenderer.on('model-download-complete', completeListener);
 
     return () => {
-      window.ipcRenderer.off('devices-updated');
-      window.ipcRenderer.off('model-download-progress');
-      window.ipcRenderer.off('model-download-complete');
+      window.ipcRenderer.off('devices-updated', devicesListener);
+      window.ipcRenderer.off('model-download-progress', progressListener);
+      window.ipcRenderer.off('model-download-complete', completeListener);
     };
   }, []);
 

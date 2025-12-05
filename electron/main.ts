@@ -55,7 +55,6 @@ function createWindow() {
       sandbox: false,
     },
   })
-  console.log('Preload path:', path.join(__dirname, 'preload.js'));
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
@@ -65,7 +64,6 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // win.loadFile('dist/index.html')
     if (process.env.DIST) {
       win.loadFile(path.join(process.env.DIST, 'index.html'))
     }

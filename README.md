@@ -3,302 +3,305 @@
 
 > **Transform your home network into a distributed AI powerhouse. Each device gets its own personality, but they all share the same brain.**
 
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
+![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 ## Overview
+
 **"I Need a Spark"** is a revolutionary distributed AI voice assistant built on [Parallax](https://github.com/GradientHQ/parallax). It turns your home devices into a collective intelligence network - where your Mac Mini, MacBook Pro, Linux machines, and more combine their compute power to run sophisticated AI models locally, privately, and beautifully.
+
+## ✨ What's New (Latest Update)
+
+- 🎨 **Unified Dashboard** - All settings consolidated into one beautiful tabbed interface
+- 🎤 **Auto Listen Mode** - Continuous voice listening with pulsing visual feedback
+- 🖥️ **Clean Main Interface** - Just the orb, name, status, and a single "Tap to Speak" button
+- ⚙️ **Tabbed Settings** - Visuals, Controls, Network, Personality, and Logs all in one place
+- 🎯 **Improved UX** - Better click handling, themed scrollbars, and smoother interactions
 
 ## The Vision: A Network of Minds
 
 Imagine installing an AI assistant on every device in your home. Each one has a unique personality and name - "Atlas" on your desk, "Nova" on your laptop, "Echo" in the living room - but they all share the computational power of your entire network through Parallax. No cloud. No subscriptions. Just pure, distributed AI running on hardware you own.
 
-### The Magic Triangle
+## Screenshots
 
-1. **The Interface**
-   - Transparent, frameless Electron window that floats on your desktop
-   - Hypnotic ASCII orb with sine waves, sawtooth patterns, and symmetrical rotation
-   - Audio-reactive visualization that pulses with your voice and the AI's responses
-   - Customizable with gear icon - change patterns, colors, and effects on the fly
+The main interface features a mesmerizing ASCII orb that responds to audio and status changes:
 
-2. **The Brain**
-   - Powered by Parallax distributed inference
-   - Seamlessly shares compute across all devices
-   - Run models too large for a single machine
-   - True peer-to-peer AI intelligence
-
-3. **The Personality**
-   - Each device has its own AI persona with unique name and backstory
-   - Customizable traits, voice, and behavior
-   - All personas tap into the same shared knowledge base
-   - Create your own network of AI characters
+\`\`\`
+     ╔════════════════════════════════════╗
+     ║           ✕     ⚙️                 ║
+     ║                                    ║
+     ║         ∿∿∿∿∿∿∿∿∿∿∿∿∿              ║
+     ║       ∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿             ║
+     ║      ∿∿∿∿∿   ∿∿∿   ∿∿∿∿∿           ║
+     ║       ∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿∿             ║
+     ║         ∿∿∿∿∿∿∿∿∿∿∿∿∿              ║
+     ║                                    ║
+     ║              SPARK                 ║
+     ║          STATUS: IDLE              ║
+     ║                                    ║
+     ║       [ 🎤 TAP TO SPEAK ]          ║
+     ║                                    ║
+     ╚════════════════════════════════════╝
+\`\`\`
 
 ## Features
 
 ### 🖥️ Distributed Intelligence
--   **Host Mode**: Acts as the central hub, coordinating the compute resources via Parallax.
--   **Client Mode**: Connects to the host to offload inference, allowing lightweight devices to run powerful models.
+- **Host Mode**: Acts as the central hub, coordinating compute resources via Parallax
+- **Client Mode**: Connects to the host to offload inference, allowing lightweight devices to run powerful models
+- **Network Auto-Discovery**: Devices find each other automatically via mDNS/Bonjour
 
-### 🎨 "SICK" UI/UX
--   **Electron-based**: Cross-platform desktop application.
--   **Transparent Overlay**: No traditional window borders. Just the assistant floating on your desktop.
--   **Reactive ASCII Orb**: Visual feedback for listening, thinking, and speaking states.
+### 🎨 Beautiful UI/UX
+- **Transparent Overlay**: Frameless Electron window that floats on your desktop
+- **Reactive ASCII Orb**: Visual feedback with multiple wave patterns and symmetry modes
+- **Unified Dashboard**: All settings in one tabbed interface (⚙️ gear icon)
+- **7 Color Themes**: Neon Cyan, Matrix Green, Hot Pink, Sunset, Ocean, Fire, Rainbow
+- **5 Character Sets**: Classic, Blocks, Geometric, Cyber, Organic
 
-### 🗣️ Voice Interaction
--   **Speech-to-Text (STT)**: High-accuracy, local/free API transcription (e.g., Whisper).
--   **Text-to-Speech (TTS)**: Natural sounding voice synthesis.
--   **Wake Word**: (Planned) Hands-free activation.
+### 🗣️ Voice Interaction (In Progress)
+- **Speech-to-Text**: Local transcription using Whisper
+- **Text-to-Speech**: Natural voice synthesis via Edge TTS
+- **Auto Listen Mode**: Continuous listening with visual feedback
 
 ### 💾 Persistence & Customization
--   **SQLite Database**: Stores user preferences, assistant names, personality settings, and conversation history.
--   **Dashboard**: View analytics and manage connected devices.
--   **Custom Personas**: Define who your assistant is (Name, Backstory, Role) during setup.
+- **SQLite Database**: Stores preferences, personalities, and conversation history
+- **Custom Personas**: Define your AI's name, backstory, and traits
+- **Model Selection**: Choose from various LLMs during setup
 
 ## Tech Stack
--   **Frontend**: Electron, React, TypeScript, Three.js (for ASCII rendering effects).
--   **Backend**: Node.js (Electron main process), Python (Parallax integration).
--   **Database**: SQLite.
--   **AI/ML**: Parallax SDK, Open Source LLMs (Llama 3, Mistral, etc.), Whisper (STT), Coqui/Piper (TTS).
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Electron, React 18, TypeScript |
+| Visualization | Custom ASCII renderer with WebGL effects |
+| Backend | Node.js (Electron main), Python (Parallax) |
+| Database | SQLite via better-sqlite3 |
+| AI/ML | Parallax SDK, Open Source LLMs |
+| Voice | Whisper (STT), Edge TTS |
 
 ## Getting Started
 
 ### Prerequisites
-1.  **Node.js**: v18 or higher.
-2.  **Python**: v3.10 or higher.
-3.  **Parallax**: Ensure the parent `parallax` repository is set up and dependencies are installed in your environment.
-4.  **PortAudio**: Required for microphone access (Mac: `brew install portaudio`, Linux: `sudo apt-get install portaudio19-dev`).
+
+1. **Node.js**: v18 or higher
+2. **Python**: v3.10 or higher
+3. **PortAudio**: Required for microphone access
+   \`\`\`bash
+   # macOS
+   brew install portaudio
+   
+   # Linux (Ubuntu/Debian)
+   sudo apt-get install portaudio19-dev python3-dev
+   \`\`\`
 
 ### Installation
 
-1.  **Install Frontend Dependencies**:
-    ```bash
-    cd parallax-i-need-a-spark
-    npm install
-    ```
+1. **Clone the Repository**:
+   \`\`\`bash
+   git clone https://github.com/lalomorales22/parallax-i-need-a-spark.git
+   cd parallax-i-need-a-spark
+   \`\`\`
 
-2.  **Install Python Dependencies**:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    # Install voice dependencies
-    pip install -r python_bridge/requirements-voice.txt
-    # Install Phase 2 dependencies (network discovery, model management)
-    pip install -r python_bridge/requirements-phase2.txt
-    ```
+2. **Install Frontend Dependencies**:
+   \`\`\`bash
+   npm install
+   \`\`\`
+
+3. **Set Up Python Environment**:
+   \`\`\`bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Install voice dependencies
+   pip install -r python_bridge/requirements-voice.txt
+   
+   # Install network/model dependencies
+   pip install -r python_bridge/requirements-phase2.txt
+   \`\`\`
 
 ### Running the App
 
-1.  **Start the Application**:
-    ```bash
-    npm run dev
-    ```
-    This will launch the transparent "Spark" interface on your desktop.
+\`\`\`bash
+npm run dev
+\`\`\`
 
-2.  **Run Tests** (Optional):
-    ```bash
-    # Run all tests
-    npm test
+This launches the Spark interface on your desktop. On first launch, you'll go through a 6-step setup wizard.
 
-    # Run tests with UI
-    npm run test:ui
+## Using the App
 
-    # Run tests with coverage
-    npm run test:coverage
-    ```
+### Main Interface
 
-3.  **Build for Production** (Optional):
-    ```bash
-    npm run build
-    ```
-    This will create distributable packages in the `release/` directory.
+The main screen shows:
+- **ASCII Orb**: Animated visualization that responds to status
+- **Assistant Name**: Your AI's name (set during onboarding)
+- **Status**: Current state (IDLE, LISTENING, THINKING, SPEAKING)
+- **Tap to Speak Button**: Click to start voice interaction
 
-2.  **Complete Setup Wizard**:
-    -   On first launch, you'll be guided through a 6-step setup process
-    -   Choose your AI's name, personality, and role (Host or Client)
-    -   Configure network settings and select an AI model
+### Unified Dashboard (⚙️)
 
-3.  **Start the Brain (Host)**:
-    -   Click the **🧠 HOST** button in the UI
-    -   This initializes the Parallax server using the local Python environment
-    -   Wait for the logs to show "ServerState.READY"
+Click the gear icon to access all settings in a tabbed interface:
 
-4.  **Connect a Body (Client)**:
-    -   On other devices, run the app and click **🔌 CLIENT**
-    -   Use auto-discovery or manually enter the Host's IP address
-    -   View connected devices in the Network Dashboard
+| Tab | Description |
+|-----|-------------|
+| 🎨 **Visuals** | Customize orb appearance - wave type, colors, symmetry, rotation |
+| 🎮 **Controls** | Start Host/Client, Voice Assistant, Auto Listen toggle |
+| 🌐 **Network** | View connected devices and their status |
+| ✨ **Personality** | Edit AI name, backstory, traits, voice style |
+| 📊 **Logs** | View system logs and debug information |
 
-5.  **Activate Voice**:
-    -   Click **🎤 VOICE** to enable the microphone and audio feedback
-    -   The ASCII Orb will turn **Green** when listening
-    -   Speak clearly. The Orb will turn **Yellow** while thinking and **Magenta** when speaking
+### Window Controls
 
-6.  **Customize Your Experience**:
-    -   Click **⚙️ Settings** to customize visualizations
-    -   Click **✨ Personality** to edit your AI's traits and behavior
-    -   Click **🌐 Network** to view your distributed AI network
-
-## Development Status & Roadmap
-
-This project is currently under active development for the NVIDIA DGX Spark competition. We're following an ambitious **3-Phase Development Plan**:
-
-### 🔵 Phase 1: Foundation & Visual Excellence ✅ COMPLETED
-- ✅ Basic Electron + React + TypeScript setup
-- ✅ Initial ASCII orb visualization
-- ✅ SQLite database for settings
-- ✅ **Setup wizard overhaul** - 6-step wizard with personality presets, role selection, and smooth animations
-- ✅ **Advanced visualization** - Sine/sawtooth/square/triangle/hybrid waves with configurable frequency and amplitude
-- ✅ **Symmetry modes** - Radial (2x, 4x, 6x, 8x), bilateral, and kaleidoscope transformations
-- ✅ **Multi-axis rotation** - Independent X/Y/Z rotation with smooth easing
-- ✅ **5 Character sets** - Classic, Blocks, Geometric, Cyber, and Organic ASCII styles
-- ✅ **7 Color presets** - Neon Cyan, Matrix Green, Hot Pink, Sunset, Ocean, Fire, and animated Rainbow
-- ✅ **Enhanced audio reactivity** - FFT analysis with bass/mid/high frequency band splitting
-- ✅ **Settings panel** - Sliding panel with gear icon, full visualization controls, and randomization
-- ✅ **Glassmorphism UI** - Polished interface with backdrop blur, gradients, and smooth transitions
-
-### 🟢 Phase 2: Network Intelligence & Parallax Power ✅ COMPLETED
-- ✅ **Network auto-discovery with mDNS/Bonjour** - Automatic discovery of Spark devices on local network
-- ✅ **Network Dashboard** - Visual topology showing all connected devices with real-time stats
-- ✅ **Model Library Interface** - Browse and download models from Hugging Face
-- ✅ **Intelligent Model Download System** - Resume capability, progress tracking, and checksum verification
-- ✅ **Model Management** - Hot-swap models, view local models, set active model
-- ✅ **Enhanced Database Schema** - Support for devices, personalities, conversations, models, and network stats
-- ✅ **Personality Management System** - Full personality editor with traits, backstory, and system prompts
-- ✅ **Device Roster** - View all AI personalities on the network with status indicators
-- ✅ **Conversation Memory** - SQLite storage for conversation history with context management
-- ⏳ **Multi-device testing** - In progress
-
-### 🟣 Phase 3: Polish, Testing & Deployment ✅ COMPLETED
-- ✅ Cross-platform packaging (macOS, Linux, Windows) with electron-builder
-- ✅ Performance optimization - Lazy loading, memoization, and React optimizations
-- ✅ Comprehensive testing suite - Vitest, React Testing Library, unit tests
-- ✅ Auto-updater integration - Automatic update notifications and downloads
-- ✅ Documentation - Complete user guide, contributing guide, and enhanced README
-- ⏳ Demo video and competition submission - In progress
-
-**📋 See [tasks.md](tasks.md) for the complete development plan with detailed tasks and success metrics.**
-
-## Phase 3 Features in Detail
-
-### 🚀 Performance Optimizations
-The app now includes several performance enhancements:
-- **Lazy Loading**: Heavy components (Dashboard, NetworkDashboard, PersonalityEditor) are loaded on-demand
-- **React Memoization**: Expensive computations are memoized with `useMemo` and `useCallback`
-- **Optimized Rendering**: Color calculations and other expensive operations are cached
-- **Suspense Integration**: Smooth loading experience with fallback UI
-
-### 🧪 Testing Infrastructure
-Comprehensive testing setup for reliability:
-- **Vitest**: Fast, modern testing framework
-- **React Testing Library**: Component testing utilities
-- **Coverage Reports**: Track test coverage across the codebase
-- **Unit Tests**: Core functionality tests for visualization, database, and components
-
-### 📦 Cross-Platform Packaging
-Production-ready installers for all platforms:
-- **macOS**: DMG and ZIP packages (Intel & Apple Silicon)
-- **Linux**: AppImage, DEB, and RPM packages
-- **Windows**: NSIS installer and portable executable
-- **Auto-Updates**: Built-in update mechanism via electron-updater
-
-### 📚 Documentation
-Complete documentation for users and contributors:
-- **User Guide**: Comprehensive walkthrough of all features ([USER_GUIDE.md](USER_GUIDE.md))
-- **Contributing Guide**: Developer guidelines and best practices ([CONTRIBUTING.md](CONTRIBUTING.md))
-- **Troubleshooting**: Common issues and solutions
-- **FAQ**: Frequently asked questions
-
-## Phase 2 Features in Detail
-
-### 🌐 Network Discovery
-The app now automatically discovers other Spark instances on your local network using mDNS/Bonjour. Simply start the app on multiple devices and they'll find each other automatically - no manual IP configuration needed!
-
-### 📊 Network Dashboard
-A comprehensive dashboard showing:
-- **Device Topology**: Visual representation of all connected devices
-- **Real-time Stats**: CPU, RAM, and GPU usage for each device
-- **Status Indicators**: Online/offline status with color coding
-- **Role Display**: Easily see which devices are hosts vs clients
-
-### 🤖 Model Management
-Browse and download AI models directly from Hugging Face:
-- **Browse Models**: Search through thousands of models with filters
-- **Smart Downloads**: Resume interrupted downloads, track progress
-- **Local Library**: View all downloaded models and their sizes
-- **Hot-Swap**: Switch between models without restarting the app
-
-### ✨ Personality System
-Create unique AI personalities for each device:
-- **Custom Names**: Give each AI its own identity
-- **Backstories**: Write rich narratives for your AIs
-- **Trait System**: Select from presets or create custom personality traits
-- **Voice Settings**: Configure voice parameters (rate, pitch, volume)
-- **System Prompts**: Fine-tune how your AI responds
-
-### 💾 Conversation Memory
-All conversations are now stored in SQLite with:
-- **Full History**: Access past conversations anytime
-- **Context Management**: Control how much context the AI remembers
-- **Export Capability**: Export conversation transcripts
-- **Per-Device Memory**: Each AI maintains its own conversation history
+- **Close (✕)**: Exit the application
+- **Settings (⚙️)**: Open the unified dashboard
+- **Drag**: Click and drag the top area to move the window
 
 ## Project Structure
 
-```
+\`\`\`
 parallax-i-need-a-spark/
-├── electron/              # Electron main process
-│   ├── main.ts           # Main entry point with auto-updater
-│   ├── preload.ts        # Preload script for IPC
-│   └── db.ts             # SQLite database operations
-├── src/                  # React frontend
-│   ├── components/       # React components
-│   │   ├── AsciiOrb.tsx
-│   │   ├── Dashboard.tsx
-│   │   ├── NetworkDashboard.tsx
-│   │   ├── PersonalityEditor.tsx
-│   │   ├── SettingsPanel.tsx
-│   │   └── Onboarding.tsx
-│   ├── types/           # TypeScript type definitions
-│   ├── test/            # Test utilities and setup
-│   └── App.tsx          # Main app with lazy loading
-├── python_bridge/       # Python backend
-│   ├── host.py         # Parallax host server
-│   ├── client.py       # Parallax client worker
-│   ├── voice.py        # Voice processing (STT/TTS)
-│   ├── network_discovery.py  # mDNS device discovery
-│   └── model_manager.py      # Model download/management
-├── tests/               # Test files
-├── docs/                # Documentation
-│   ├── USER_GUIDE.md   # Comprehensive user guide
-│   └── CONTRIBUTING.md # Contribution guidelines
-├── tasks.md            # 3-phase development plan
-├── package.json        # Node dependencies & scripts
-└── vitest.config.ts    # Testing configuration
-```
+├── electron/                 # Electron main process
+│   ├── main.ts              # Main entry, window creation, IPC
+│   ├── preload.ts           # Preload script for IPC bridge
+│   └── db.ts                # SQLite database operations
+├── src/                     # React frontend
+│   ├── App.tsx              # Main app component
+│   ├── components/
+│   │   ├── AsciiOrb.tsx     # The animated ASCII visualization
+│   │   ├── UnifiedDashboard.tsx  # Tabbed settings dashboard
+│   │   ├── Onboarding.tsx   # 6-step setup wizard
+│   │   └── ...
+│   └── types/               # TypeScript definitions
+├── python_bridge/           # Python backend
+│   ├── host.py              # Parallax host server
+│   ├── client.py            # Parallax client worker
+│   ├── voice_assistant.py   # Voice processing
+│   ├── network_discovery.py # mDNS device discovery
+│   └── model_manager.py     # Model management
+├── package.json
+├── vite.config.ts
+└── README.md
+\`\`\`
 
-## Documentation
+## Development
 
-- **[User Guide](USER_GUIDE.md)**: Complete guide for end users
-- **[Contributing](CONTRIBUTING.md)**: Guidelines for contributors
-- **[Tasks](tasks.md)**: Detailed development roadmap and progress
+### Scripts
 
-## Testing
+\`\`\`bash
+npm run dev          # Start in development mode
+npm run build        # Build for production
+npm test             # Run tests
+npm run test:ui      # Run tests with UI
+npm run test:coverage # Run tests with coverage
+\`\`\`
 
-This project includes comprehensive testing:
+### Testing
 
-```bash
+\`\`\`bash
 # Run all tests
 npm test
 
-# Run tests in watch mode
+# Watch mode
 npm test -- --watch
 
-# View test coverage
+# Coverage report
 npm run test:coverage
+\`\`\`
 
-# Run tests with UI
-npm run test:ui
-```
+## Known Issues & TODOs
 
-Current test coverage includes:
-- ✅ Visualization settings validation
-- ✅ Component rendering tests
-- ✅ Database operations
-- ✅ IPC communication mocking
+### 🔴 Critical (Voice Not Working)
 
+| Issue | Description | Workaround |
+|-------|-------------|------------|
+| **No speech_recognition module** | Python dependency not installed | Run \`pip install SpeechRecognition pyaudio\` in your venv |
+| **No huggingface_hub module** | Model browser fails | Run \`pip install huggingface_hub\` in your venv |
+| **Voice button doesn't work** | Tap to Speak not functional yet | Start voice from Dashboard > Controls tab |
+| **No audio output** | TTS not connected | Voice pipeline integration in progress |
+
+### 🟡 Medium Priority
+
+| Issue | Description | Status |
+|-------|-------------|--------|
+| **Window dragging difficult** | Hard to find drag area on transparent window | Need to add a visible drag handle at top |
+| **Model not connected** | Selected model during setup not loading | Parallax integration pending |
+| **No "Allow Microphone" prompt** | Browser permission not requested | Need to implement permission request |
+| **Host mode errors** | Python errors when starting host | Check Python venv is activated |
+| **Status stuck on IDLE** | No status updates from voice system | Voice pipeline not connected |
+
+### 🟢 Low Priority / Enhancements
+
+| Issue | Description |
+|-------|-------------|
+| Window size persistence | Window doesn't remember size/position |
+| Keyboard shortcuts | No hotkeys for common actions |
+| System tray | No minimize to tray option |
+| Wake word | "Hey Spark" activation not implemented |
+
+### Quick Fix Commands
+
+If you're seeing Python module errors, run these commands:
+
+\`\`\`bash
+# Activate the virtual environment first!
+source venv/bin/activate
+
+# Install missing dependencies
+pip install SpeechRecognition pyaudio edge-tts huggingface_hub
+
+# On macOS, you may also need:
+brew install portaudio
+
+# Then restart the app
+npm run dev
+\`\`\`
+
+## Roadmap
+
+### Completed ✅
+- [x] Electron + React + TypeScript foundation
+- [x] ASCII orb visualization with multiple effects
+- [x] 6-step onboarding wizard
+- [x] SQLite persistence
+- [x] Unified settings dashboard
+- [x] Network discovery UI
+- [x] Personality editor
+- [x] Cross-platform build setup
+
+### In Progress 🔄
+- [ ] Voice input/output pipeline
+- [ ] Parallax model integration
+- [ ] Multi-device testing
+- [ ] Competition demo video
+
+### Planned 📋
+- [ ] Wake word detection
+- [ ] Conversation memory
+- [ ] System tray support
+- [ ] Keyboard shortcuts
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Documentation
+
+- [User Guide](USER_GUIDE.md) - Detailed usage instructions
+- [Contributing](CONTRIBUTING.md) - Developer guidelines
+- [Tasks](tasks.md) - Development roadmap
+
+## License
+
+MIT License - See LICENSE file for details.
+
+## Acknowledgments
+
+- **Parallax Team** - For the distributed inference framework
+- **NVIDIA** - For the DGX Spark competition
+- The open-source community for the amazing tools that make this possible
+
+---
+
+**Built with ❤️ for the NVIDIA DGX Spark Competition**
+
+*"I Need a Spark"* - Because every AI deserves a personality, and every home deserves distributed intelligence.

@@ -61,7 +61,7 @@ sudo apt-get install portaudio19-dev python3-dev
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/your-username/parallax-i-need-a-spark.git
+   git clone https://github.com/lalomorales22/parallax-i-need-a-spark.git
    cd parallax-i-need-a-spark
    ```
 

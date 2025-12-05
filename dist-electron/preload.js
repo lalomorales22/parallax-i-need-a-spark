@@ -25,7 +25,29 @@ try {
     startHost: () => electron.ipcRenderer.invoke("start-host"),
     startClient: () => electron.ipcRenderer.invoke("start-client"),
     startVoice: () => electron.ipcRenderer.invoke("start-voice"),
-    closeApp: () => electron.ipcRenderer.invoke("close-app")
+    closeApp: () => electron.ipcRenderer.invoke("close-app"),
+    // Network Discovery
+    startNetworkDiscovery: (deviceName, role, personality, model) => electron.ipcRenderer.invoke("start-network-discovery", deviceName, role, personality, model),
+    stopNetworkDiscovery: () => electron.ipcRenderer.invoke("stop-network-discovery"),
+    getAllDevices: () => electron.ipcRenderer.invoke("get-all-devices"),
+    getDevice: (deviceId) => electron.ipcRenderer.invoke("get-device", deviceId),
+    // Model Management
+    browseModels: (task, limit) => electron.ipcRenderer.invoke("browse-models", task, limit),
+    downloadModel: (modelId) => electron.ipcRenderer.invoke("download-model", modelId),
+    getLocalModels: () => electron.ipcRenderer.invoke("get-local-models"),
+    setActiveModel: (modelId) => electron.ipcRenderer.invoke("set-active-model", modelId),
+    getActiveModel: () => electron.ipcRenderer.invoke("get-active-model"),
+    // Personality Management
+    savePersonality: (personality) => electron.ipcRenderer.invoke("save-personality", personality),
+    getPersonality: (deviceId) => electron.ipcRenderer.invoke("get-personality", deviceId),
+    updatePersonality: (id, updates) => electron.ipcRenderer.invoke("update-personality", id, updates),
+    // Conversation Management
+    saveConversation: (deviceId, role, content) => electron.ipcRenderer.invoke("save-conversation", deviceId, role, content),
+    getConversations: (deviceId, limit) => electron.ipcRenderer.invoke("get-conversations", deviceId, limit),
+    clearConversations: (deviceId) => electron.ipcRenderer.invoke("clear-conversations", deviceId),
+    // Network Stats
+    saveNetworkStat: (deviceId, metricName, metricValue) => electron.ipcRenderer.invoke("save-network-stat", deviceId, metricName, metricValue),
+    getNetworkStats: (deviceId, metricName, limit) => electron.ipcRenderer.invoke("get-network-stats", deviceId, metricName, limit)
   });
   console.log("contextBridge exposed successfully");
 } catch (error) {

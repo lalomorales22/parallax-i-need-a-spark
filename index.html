@@ -9,11 +9,10 @@
       body {
         margin: 0;
         padding: 0;
-        background: transparent; /* Important for transparent window */
+        background: transparent;
         overflow: hidden;
         font-family: 'Courier New', Courier, monospace;
         color: #00ffcc;
-        -webkit-app-region: drag; /* Allow dragging the window */
       }
       #root {
         width: 100vw;
@@ -21,9 +20,40 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        -webkit-app-region: no-drag;
       }
-      button {
-        -webkit-app-region: no-drag; /* Buttons must be clickable */
+      /* Drag handle - only the top bar area */
+      .drag-handle {
+        -webkit-app-region: drag;
+      }
+      /* Make all interactive elements clickable */
+      button, input, textarea, select, a, [role="button"] {
+        -webkit-app-region: no-drag;
+        cursor: pointer;
+      }
+      input, textarea {
+        cursor: text;
+      }
+      /* Custom scrollbar theming */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 255, 204, 0.1);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(0, 255, 204, 0.4);
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 255, 204, 0.6);
+      }
+      /* Scrollable containers */
+      .scrollable {
+        overflow-y: auto;
+        overflow-x: hidden;
       }
     </style>
   </head>

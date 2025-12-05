@@ -1,29 +1,9 @@
-import React, { useState, useEffect, lazy, Suspense, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import AsciiOrb from './components/AsciiOrb';
 import Onboarding from './components/Onboarding';
-import SettingsPanel from './components/SettingsPanel';
+import UnifiedDashboard from './components/UnifiedDashboard';
 import type { VisualizationSettings, WaveType, SymmetryMode, CharacterSet, ColorPreset } from './types/visualization';
 import { defaultVisualizationSettings } from './types/visualization';
-
-// Lazy load heavy components for better performance
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const NetworkDashboard = lazy(() => import('./components/NetworkDashboard'));
-const PersonalityEditor = lazy(() => import('./components/PersonalityEditor'));
-
-// Loading fallback component
-const LoadingSpinner = () => (
-  <div style={{
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    color: '#00ffcc',
-    fontSize: '16px',
-    animation: 'pulse 1.5s ease-in-out infinite'
-  }}>
-    Loading...
-  </div>
-);
 
 function App() {
   const [status, setStatus] = useState('IDLE');
@@ -32,11 +12,9 @@ function App() {
   const [isSetup, setIsSetup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showDashboard, setShowDashboard] = useState(false);
-  const [showNetworkDashboard, setShowNetworkDashboard] = useState(false);
-  const [showPersonalityEditor, setShowPersonalityEditor] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [vizSettings, setVizSettings] = useState<VisualizationSettings>(defaultVisualizationSettings);
   const [currentDeviceId, setCurrentDeviceId] = useState('');
+  const [autoListen, setAutoListen] = useState(false);
 
   useEffect(() => {
     // Check if setup is complete
@@ -74,18 +52,20 @@ function App() {
     });
 
     // Listen for logs
-    window.ipcRenderer.on('log-update', (_event, message) => {
+    const logListener = (_event: any, message: string) => {
       setLogs(prev => [...prev.slice(-19), message]); // Keep last 20 lines
-    });
+    };
+    window.ipcRenderer.on('log-update', logListener);
 
     // Listen for state updates
-    window.ipcRenderer.on('state-update', (_event, newState) => {
+    const stateListener = (_event: any, newState: string) => {
       setStatus(newState);
-    });
+    };
+    window.ipcRenderer.on('state-update', stateListener);
 
     return () => {
-      window.ipcRenderer.off('log-update');
-      window.ipcRenderer.off('state-update');
+      window.ipcRenderer.off('log-update', logListener);
+      window.ipcRenderer.off('state-update', stateListener);
     };
   }, []);
 
@@ -284,14 +264,14 @@ function App() {
         ✕
       </button>
 
-      {/* Settings Gear Icon */}
+      {/* Settings Gear Icon - Opens Unified Dashboard */}
       <button
-        onClick={() => setShowSettings(!showSettings)}
+        onClick={() => setShowDashboard(!showDashboard)}
         style={{
           position: 'absolute',
           top: '20px',
           right: '70px',
-          background: showSettings ? 'rgba(0, 255, 204, 0.3)' : 'rgba(0, 255, 204, 0.2)',
+          background: showDashboard ? 'rgba(0, 255, 204, 0.3)' : 'rgba(0, 255, 204, 0.2)',
           border: '1px solid #00ffcc',
           borderRadius: '50%',
           width: '40px',
@@ -304,142 +284,34 @@ function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: showSettings ? '0 0 25px rgba(0, 255, 204, 0.5)' : '0 0 15px rgba(0, 255, 204, 0.3)',
-          animation: showSettings ? 'none' : 'undefined'
+          boxShadow: showDashboard ? '0 0 25px rgba(0, 255, 204, 0.5)' : '0 0 15px rgba(0, 255, 204, 0.3)'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(0, 255, 204, 0.4)';
           e.currentTarget.style.transform = 'rotate(90deg) scale(1.1)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = showSettings ? 'rgba(0, 255, 204, 0.3)' : 'rgba(0, 255, 204, 0.2)';
+          e.currentTarget.style.background = showDashboard ? 'rgba(0, 255, 204, 0.3)' : 'rgba(0, 255, 204, 0.2)';
           e.currentTarget.style.transform = 'rotate(0deg) scale(1)';
         }}
       >
         ⚙️
       </button>
 
-      {/* Dashboard Buttons */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        zIndex: 10
-      }}>
-        <button
-          onClick={() => setShowNetworkDashboard(true)}
-          style={{
-            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 255, 204, 0.3))',
-            border: '1px solid #00ffcc',
-            borderRadius: '8px',
-            color: '#00ffcc',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            padding: '10px 16px',
-            transition: 'all 0.3s',
-            boxShadow: '0 0 15px rgba(0, 255, 204, 0.3)',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
-            e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 255, 204, 0.5)';
-            e.currentTarget.style.transform = 'translateX(5px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 255, 204, 0.3))';
-            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.3)';
-            e.currentTarget.style.transform = 'translateX(0)';
-          }}
-        >
-          🌐 Network
-        </button>
-
-        <button
-          onClick={() => setShowPersonalityEditor(true)}
-          style={{
-            background: 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.3))',
-            border: '1px solid #ff00ff',
-            borderRadius: '8px',
-            color: '#ff00ff',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            padding: '10px 16px',
-            transition: 'all 0.3s',
-            boxShadow: '0 0 15px rgba(255, 0, 255, 0.3)',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(255, 0, 255, 0.4))';
-            e.currentTarget.style.boxShadow = '0 0 25px rgba(255, 0, 255, 0.5)';
-            e.currentTarget.style.transform = 'translateX(5px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(255, 0, 255, 0.3))';
-            e.currentTarget.style.boxShadow = '0 0 15px rgba(255, 0, 255, 0.3)';
-            e.currentTarget.style.transform = 'translateX(0)';
-          }}
-        >
-          ✨ Personality
-        </button>
-
-        <button
-          onClick={() => setShowDashboard(true)}
-          style={{
-            background: 'rgba(0, 255, 204, 0.1)',
-            border: '1px solid rgba(0, 255, 204, 0.3)',
-            borderRadius: '8px',
-            color: '#00ffcc',
-            fontSize: '11px',
-            cursor: 'pointer',
-            padding: '8px 14px',
-            transition: 'all 0.3s',
-            boxShadow: '0 0 10px rgba(0, 255, 204, 0.2)',
-            opacity: 0.7
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(0, 255, 204, 0.2)';
-            e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 255, 204, 0.4)';
-            e.currentTarget.style.opacity = '1';
-            e.currentTarget.style.transform = 'translateX(5px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(0, 255, 204, 0.1)';
-            e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 204, 0.2)';
-            e.currentTarget.style.opacity = '0.7';
-            e.currentTarget.style.transform = 'translateX(0)';
-          }}
-        >
-          📊 Logs
-        </button>
-      </div>
-
-      <Suspense fallback={<LoadingSpinner />}>
-        {showDashboard && <Dashboard onClose={() => setShowDashboard(false)} logs={logs} />}
-        {showNetworkDashboard && <NetworkDashboard onClose={() => setShowNetworkDashboard(false)} />}
-        {showPersonalityEditor && (
-          <PersonalityEditor
-            deviceId={currentDeviceId}
-            onClose={() => setShowPersonalityEditor(false)}
-            onSave={() => {
-              // Reload personality or update UI
-              console.log('Personality saved!');
-            }}
-          />
-        )}
-      </Suspense>
-      <SettingsPanel
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
+      {/* Unified Dashboard */}
+      <UnifiedDashboard
+        isOpen={showDashboard}
+        onClose={() => setShowDashboard(false)}
         settings={vizSettings}
         onSettingsChange={handleSettingsChange}
         onRandomize={randomizeVisualization}
+        logs={logs}
+        currentDeviceId={currentDeviceId}
+        onStartHost={handleStartHost}
+        onStartClient={handleStartClient}
+        onStartVoice={handleStartVoice}
+        autoListen={autoListen}
+        onAutoListenChange={setAutoListen}
       />
 
       {/* ASCII Orb */}
@@ -467,129 +339,43 @@ function App() {
         STATUS: {status}
       </p>
 
-      {/* Log Output */}
-      <div style={{
-        width: '85%',
-        maxWidth: '600px',
-        height: '120px',
-        overflowY: 'auto',
-        background: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(10px)',
-        border: `1px solid ${getOrbColor}30`,
-        borderRadius: '8px',
-        padding: '10px',
-        fontSize: '11px',
-        fontFamily: 'monospace',
-        color: getOrbColor,
-        marginBottom: '15px',
-        marginTop: '20px',
-        textAlign: 'left',
-        transition: 'border-color 0.5s, color 0.5s',
-        boxShadow: `0 0 20px ${getOrbColor}20`
-      }}>
-        {logs.map((log, i) => (
-          <div key={i} style={{ opacity: 0.6 + (i / logs.length) * 0.4 }}>{log}</div>
-        ))}
-      </div>
-
-      {/* Control Buttons */}
-      <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-        <button
-          onClick={handleStartHost}
-          style={{
-            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
-            border: '1px solid #00ffcc',
-            borderRadius: '8px',
-            color: '#00ffcc',
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            transition: 'all 0.3s',
-            boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 204, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.2)';
-          }}
-        >
-          🧠 Host
-        </button>
-        <button
-          onClick={handleStartClient}
-          style={{
-            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
-            border: '1px solid #00ffcc',
-            borderRadius: '8px',
-            color: '#00ffcc',
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            transition: 'all 0.3s',
-            boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 204, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.2)';
-          }}
-        >
-          🔌 Client
-        </button>
-        <button
-          onClick={handleStartVoice}
-          style={{
-            background: 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
-            border: '1px solid #00ffcc',
-            borderRadius: '8px',
-            color: '#00ffcc',
-            padding: '10px 20px',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            fontSize: '14px',
-            fontWeight: 'bold',
-            textTransform: 'uppercase',
-            letterSpacing: '1.5px',
-            transition: 'all 0.3s',
-            boxShadow: '0 0 15px rgba(0, 255, 204, 0.2)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(0, 255, 204, 0.4))';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 204, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 204, 0.2)';
-          }}
-        >
-          🎤 Voice
-        </button>
-      </div>
+      {/* Auto Listen Toggle */}
+      <button
+        onClick={() => {
+          setAutoListen(!autoListen);
+          if (!autoListen) {
+            handleStartVoice();
+          }
+        }}
+        style={{
+          marginTop: '20px',
+          background: autoListen 
+            ? 'linear-gradient(135deg, rgba(0, 255, 100, 0.3), rgba(0, 255, 204, 0.3))'
+            : 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
+          border: `2px solid ${autoListen ? '#00ff64' : '#00ffcc'}`,
+          borderRadius: '30px',
+          color: autoListen ? '#00ff64' : '#00ffcc',
+          padding: '14px 28px',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          transition: 'all 0.3s',
+          boxShadow: autoListen 
+            ? '0 0 30px rgba(0, 255, 100, 0.5)' 
+            : '0 0 15px rgba(0, 255, 204, 0.3)',
+          animation: autoListen ? 'pulse 2s ease-in-out infinite' : 'none'
+        }}
+      >
+        {autoListen ? '🎤 LISTENING...' : '🎤 TAP TO SPEAK'}
+      </button>
 
       <style>{`
         @keyframes pulse {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 1; }
+          0%, 100% { opacity: 0.8; box-shadow: 0 0 20px rgba(0, 255, 100, 0.4); }
+          50% { opacity: 1; box-shadow: 0 0 40px rgba(0, 255, 100, 0.7); }
         }
       `}</style>
     </div>
