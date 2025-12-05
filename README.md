@@ -1,7 +1,7 @@
 # Parallax "I Need a Spark" Voice Assistant
 ## 🎯 NVIDIA DGX Spark Competition Entry
 
-> **Transform your home network into a distributed AI powerhouse. Each device gets its own personality, but they all share the same brain.**
+> **Transform your home network into a distributed network of AI voice assistants. Each device gets its own personality, but they all share the same brain.**
 
 ![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-blue)
@@ -9,7 +9,7 @@
 
 ## Overview
 
-**"I Need a Spark"** is a revolutionary distributed AI voice assistant built on [Parallax](https://github.com/GradientHQ/parallax). It turns your home devices into a collective intelligence network - where your Mac Mini, MacBook Pro, Linux machines, and more combine their compute power to run sophisticated AI models locally, privately, and beautifully.
+**"I Need a Spark"** is a distributed AI voice assistant built on [Parallax](https://github.com/GradientHQ/parallax). It turns your home devices into a collective intelligence network - where your Mac Mini, MacBook Pro, Linux machines, and more combine their compute power to run sophisticated AI models locally, privately, and beautifully.
 
 ## ✨ What's New (Latest Update)
 
@@ -101,6 +101,7 @@ The main interface features a cute lil ASCII orb that responds to audio and stat
 ```bash
 git clone https://github.com/lalomorales22/parallax-i-need-a-spark.git
 cd parallax-i-need-a-spark
+chmod +x install.sh 
 ./install.sh
 ```
 
@@ -168,9 +169,9 @@ Here's an example home network setup:
 | Device | Role | IP | Command |
 |--------|------|-----|---------|
 | Mac Mini (24GB) | **HOST** | 192.168.0.99 | `./run-host.sh` |
-| MacBook Pro M1 | Client | DHCP | `./run-client.sh 192.168.0.99` |
-| Raspberry Pi 5 | Client | DHCP | `./run-client.sh 192.168.0.99` |
-| Linux Laptop | Client | DHCP | `./run-client.sh 192.168.0.99 --port 3005` |
+| MacBook Pro M1 | Client | DHCP | `./run-client.sh enter.host.ip.address.here` |
+| Raspberry Pi 5 | Client | DHCP | `./run-client.sh enter.host.ip.address.here` |
+| Linux Laptop | Client | DHCP | `./run-client.sh enter.host.ip.address.here --port 3005` |
 
 ### Per-Device Database
 
@@ -186,7 +187,7 @@ Want more power? Add machines as Parallax nodes:
 ```bash
 # On any machine after installing:
 source parallax/venv/bin/activate
-parallax join --host 192.168.0.99  # Join the host's cluster
+parallax join --host enter.host.ip.address.here  # Join the host's cluster
 ```
 
 ## Manual Installation

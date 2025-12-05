@@ -175,7 +175,8 @@ setup_python() {
     print_status "Setting up Python environment..."
     
     VENV_DIR="parallax/venv"
-    PARALLAX_SRC="parallax/src"
+    # Parallax repo root (where pyproject.toml is located)
+    PARALLAX_REPO="parallax"
     
     # Create directories first
     mkdir -p parallax
@@ -210,18 +211,33 @@ setup_python() {
     # Upgrade pip inside venv
     pip install --upgrade pip
     
-    # Clone Parallax SDK from source if not already present
-    if [ ! -d "$PARALLAX_SRC" ]; then
-        print_status "Cloning Parallax SDK from GitHub..."
-        git clone https://github.com/GradientHQ/parallax.git "$PARALLAX_SRC"
-    else
+    # Check if Parallax SDK already exists (has pyproject.toml)
+    if [ -f "$PARALLAX_REPO/pyproject.toml" ]; then
         print_status "Parallax source already exists, updating..."
-        (cd "$PARALLAX_SRC" && git pull) || print_warning "Could not update Parallax source"
+        (cd "$PARALLAX_REPO" && git pull) || print_warning "Could not update Parallax source"
+    else
+        # Clone Parallax SDK - clone INTO the parallax directory
+        print_status "Cloning Parallax SDK from GitHub..."
+        # Remove empty parallax dir if it exists (keeping venv)
+        if [ -d "$PARALLAX_REPO" ] && [ ! -f "$PARALLAX_REPO/pyproject.toml" ]; then
+            # Move venv out temporarily if it exists
+            if [ -d "$VENV_DIR" ]; then
+                mv "$VENV_DIR" /tmp/spark_venv_backup
+            fi
+            rm -rf "$PARALLAX_REPO"
+            git clone https://github.com/GradientHQ/parallax.git "$PARALLAX_REPO"
+            # Move venv back
+            if [ -d "/tmp/spark_venv_backup" ]; then
+                mv /tmp/spark_venv_backup "$VENV_DIR"
+            fi
+        else
+            git clone https://github.com/GradientHQ/parallax.git "$PARALLAX_REPO"
+        fi
     fi
     
-    # Install Parallax SDK from source
+    # Install Parallax SDK from source (from repo root where pyproject.toml is)
     print_status "Installing Parallax SDK from source..."
-    cd "$PARALLAX_SRC"
+    cd "$PARALLAX_REPO"
     
     # Install based on OS
     if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -337,9 +353,9 @@ EOF
 main() {
     echo ""
     echo "╔═══════════════════════════════════════════════════════════╗"
-    echo "║       ⚡ Spark Voice Assistant - Installer ⚡              ║"
+    echo "║       ⚡ Spark Voice Assistant - Installer ⚡             ║"
     echo "║                                                           ║"
-    echo "║  Distributed AI Voice Assistant powered by Parallax SDK  ║"
+    echo "║  Distributed AI Voice Assistant powered by Parallax SDK   ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo ""
     
@@ -371,7 +387,7 @@ main() {
     
     echo ""
     echo "╔═══════════════════════════════════════════════════════════╗"
-    echo "║                  ✅ Installation Complete!                 ║"
+    echo "║                  ✅ Installation Complete!                ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo ""
     
@@ -389,12 +405,12 @@ main() {
         echo "Example: ./run-client.sh 192.168.0.99"
     else
         echo "┌─────────────────────────────────────────────────────────────┐"
-        echo "│  To start as HOST (this machine runs the AI model):        │"
+        echo "│  To start as HOST (this machine runs the AI model):         │"
         echo "│                                                             │"
         echo "│    ./run-host.sh                                            │"
         echo "│                                                             │"
-        echo "│  Your IP: $LOCAL_IP                                         │"
-        echo "│  Other devices connect with: ./run-client.sh $LOCAL_IP      │"
+        echo "│  Your IP: $LOCAL_IP                                      │"
+        echo "│  Other devices connect with: ./run-client.sh $LOCAL_IP   │"
         echo "└─────────────────────────────────────────────────────────────┘"
         echo ""
         echo "┌─────────────────────────────────────────────────────────────┐"
