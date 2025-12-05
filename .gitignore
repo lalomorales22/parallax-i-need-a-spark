@@ -1,2 +1,47 @@
-node_modules
-venv
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Parallax SDK (users install themselves)
+parallax/
+
+# Database (contains user data)
+*.db
+spark.db
+
+# Build outputs
+dist/
+dist-electron/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Electron
+*.asar
+
+# Temporary files
+*.tmp
+*.temp
+parallax

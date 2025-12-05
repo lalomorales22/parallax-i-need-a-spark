@@ -78,101 +78,109 @@ The main interface features a mesmerizing ASCII orb that responds to audio and s
 | Backend | Node.js (Electron main), Python (Parallax) |
 | Database | SQLite via better-sqlite3 |
 | AI/ML | Parallax SDK, Open Source LLMs |
-| Voice | Whisper (STT), Edge TTS |
+| Voice | Google STT, Edge TTS |
 
-## Getting Started
+## Quick Start (One-Line Install)
 
-### Prerequisites
+```bash
+git clone https://github.com/lalomorales22/parallax-i-need-a-spark.git
+cd parallax-i-need-a-spark
+./install.sh
+```
 
-1. **Node.js**: v18 or higher
-2. **Python**: v3.10 or higher
-3. **Parallax SDK**: Required for distributed AI inference
-4. **PortAudio**: Required for microphone access
-   \`\`\`bash
-   # macOS
-   brew install portaudio sdl2 sdl2_mixer
-   
-   # Linux (Ubuntu/Debian)
-   sudo apt-get install portaudio19-dev python3-dev libsdl2-dev libsdl2-mixer-dev
-   \`\`\`
+That's it! The installer works on:
+- ✅ **macOS** (Intel & Apple Silicon)
+- ✅ **Debian/Ubuntu** (including Xubuntu)
+- ✅ **Arch Linux** (including OmarChy)
+- ✅ **Raspberry Pi OS** (Pi 4/5)
+- ✅ **Fedora**
 
-### Installation
+## Prerequisites
 
-1. **Clone the Repository**:
-   \`\`\`bash
-   git clone https://github.com/lalomorales22/parallax-i-need-a-spark.git
-   cd parallax-i-need-a-spark
-   \`\`\`
+- **Node.js**: v18 or higher
+- **Python**: v3.11-3.13 (Parallax SDK requirement)
+- **Git**: For cloning the repo
 
-2. **Install Parallax SDK** (required for AI inference):
-   \`\`\`bash
-   # Clone Parallax to a separate directory
-   git clone https://github.com/GradientHQ/parallax.git ~/parallax
-   cd ~/parallax
-   
-   # Create and activate virtual environment
-   python3 -m venv venv
-   source venv/bin/activate
-   
-   # Install Parallax for macOS
-   pip install -e '.[mac]'
-   
-   # For Linux with GPU:
-   # pip install -e '.[gpu]'
-   \`\`\`
+The install script will handle the rest!
 
-3. **Install Frontend Dependencies**:
-   \`\`\`bash
-   cd /path/to/parallax-i-need-a-spark
-   npm install
-   \`\`\`
+## Running as HOST (Main Machine)
 
-4. **Set Up Python Environment for Voice**:
-   \`\`\`bash
-   # Make sure you're in the Parallax venv (or create a new one)
-   source ~/parallax/venv/bin/activate
-   
-   # Install voice dependencies
-   pip install -r python_bridge/requirements-voice.txt
-   
-   # Install network/model dependencies  
-   pip install -r python_bridge/requirements-phase2.txt
-   \`\`\`
+Your most powerful machine should be the host (e.g., Mac Mini 24GB):
 
-### Running the App
+```bash
+# 1. Start Parallax with a model
+source parallax/venv/bin/activate
+parallax run --model Qwen/Qwen3-0.6B --host 0.0.0.0
 
-**Step 1: Start Parallax Scheduler (Host Machine)**
+# 2. In another terminal, start Spark
+./run.sh
+```
 
-On your main/host machine (e.g., Mac Mini with 24GB RAM):
-\`\`\`bash
-# Activate Parallax environment
-source ~/parallax/venv/bin/activate
+## Running as CLIENT (Other Machines)
 
-# Start the scheduler with a model
-parallax run -m Qwen/Qwen3-0.6B -n 1 --host 0.0.0.0
-\`\`\`
+On your other devices (laptops, Raspberry Pis, etc.):
 
-This will:
-- Open the Parallax setup UI at http://localhost:3001
-- Download the model on first run
-- Start the chat API at http://localhost:3001/v1/chat/completions
+```bash
+./run-client.sh
+```
 
-**Step 2: (Optional) Join Additional Nodes**
+The client will auto-discover and connect to your host!
 
-On other machines in your network:
-\`\`\`bash
-source ~/parallax/venv/bin/activate
-parallax join  # Auto-discovers local scheduler
-# Or for remote: parallax join -s <scheduler-peer-id>
-\`\`\`
+## Multi-Device Setup Guide
 
-**Step 3: Launch the Spark UI**
-\`\`\`bash
-cd /path/to/parallax-i-need-a-spark
-npm run dev
-\`\`\`
+Here's how to set up your home network:
 
-This launches the Spark interface on your desktop. On first launch, you'll go through a 6-step setup wizard.
+| Device | Role | Recommended Model |
+|--------|------|-------------------|
+| Mac Mini (24GB) | **HOST** | Qwen3-4B or Qwen3-1.7B |
+| MacBook Pro M1 | Client or Backup Host | Qwen3-1.7B |
+| Raspberry Pi 5 | Client | (offloads to host) |
+| Linux Laptops | Client or Node | (joins Parallax network) |
+
+### Adding Compute Nodes
+
+Want more power? Add machines as Parallax nodes:
+
+```bash
+# On any machine after installing:
+source parallax/venv/bin/activate
+parallax join  # Auto-discovers and joins the host
+```
+
+## Manual Installation
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+### macOS
+```bash
+brew install python@3.12 node portaudio ffmpeg
+```
+
+### Debian/Ubuntu/Raspberry Pi
+```bash
+sudo apt install python3 python3-pip python3-venv nodejs npm portaudio19-dev ffmpeg
+```
+
+### Arch Linux
+```bash
+sudo pacman -S python python-pip nodejs npm portaudio ffmpeg
+```
+
+### Then:
+```bash
+# Create Python environment
+python3 -m venv parallax/venv
+source parallax/venv/bin/activate
+
+# Install Python packages
+pip install parallax-sdk SpeechRecognition edge-tts pyaudio requests
+
+# Install Node packages
+npm install
+```
+
+</details>
 
 ## Using the App
 
