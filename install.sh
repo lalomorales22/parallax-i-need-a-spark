@@ -188,6 +188,10 @@ setup_node() {
     
     npm install
     
+    # Rebuild native modules for Electron
+    print_status "Rebuilding native modules for Electron..."
+    npm run postinstall || npx @electron/rebuild -f -w better-sqlite3
+    
     print_success "Node.js dependencies installed"
 }
 
