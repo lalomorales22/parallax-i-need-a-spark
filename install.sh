@@ -6,6 +6,10 @@
 
 set -e
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -154,23 +158,25 @@ setup_python() {
     
     # Install based on OS
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        pip install -e '.[mac]'
+        pip install -e '.[mac]' || print_warning "Parallax install had issues, continuing..."
     elif command -v nvidia-smi &> /dev/null; then
         print_status "NVIDIA GPU detected, installing with GPU support..."
-        pip install -e '.[gpu]'
+        pip install -e '.[gpu]' || print_warning "Parallax install had issues, continuing..."
     else
-        pip install -e '.[cpu]'
+        pip install -e '.[cpu]' || print_warning "Parallax install had issues, continuing..."
     fi
     
-    cd - > /dev/null
+    cd "$SCRIPT_DIR"
     
-    # Install voice assistant dependencies
+    # Install voice assistant dependencies (always install these)
     print_status "Installing voice assistant dependencies..."
-    pip install \
-        SpeechRecognition \
-        edge-tts \
-        pyaudio \
-        requests
+    pip install SpeechRecognition edge-tts pyaudio requests
+    
+    # Verify installation
+    print_status "Verifying installation..."
+    python -c "import speech_recognition; print('✓ SpeechRecognition OK')" || print_error "SpeechRecognition failed"
+    python -c "import edge_tts; print('✓ edge-tts OK')" || print_error "edge-tts failed"
+    python -c "import requests; print('✓ requests OK')" || print_error "requests failed"
     
     deactivate
     
