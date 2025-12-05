@@ -11,7 +11,9 @@ import time
 
 # Constants
 # Parallax scheduler runs on port 3001, nodes on port 3000
-PARALLAX_API_URL = "http://localhost:3001/v1/chat/completions"
+# Use environment variable for host address, default to localhost
+PARALLAX_HOST = os.environ.get("PARALLAX_HOST", "localhost")
+PARALLAX_API_URL = f"http://{PARALLAX_HOST}:3001/v1/chat/completions"
 TEMP_AUDIO_FILE = os.path.join(tempfile.gettempdir(), "spark_response.mp3")
 
 def log(msg):

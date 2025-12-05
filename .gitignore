@@ -13,6 +13,9 @@ parallax/
 *.db
 spark.db
 
+# Local config (device-specific)
+.parallax_host
+
 # Build outputs
 dist/
 dist-electron/
