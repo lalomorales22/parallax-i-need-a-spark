@@ -14535,12 +14535,18 @@ require$$1$4.app.whenReady().then(() => {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/voice_assistant.py");
     }
     const pythonPath = findPythonPath();
+    const parallaxHost = process.env.PARALLAX_HOST || "localhost";
     console.log(`Voice Assistant using Python: ${pythonPath}`);
+    console.log(`Voice Assistant connecting to Parallax at: ${parallaxHost}:3001`);
     let pyshell = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,
       pythonOptions: ["-u"],
-      args: []
+      args: [],
+      env: {
+        ...process.env,
+        PARALLAX_HOST: parallaxHost
+      }
     });
     pyshell.on("message", function(message) {
       console.log(message);
