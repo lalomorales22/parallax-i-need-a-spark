@@ -124,21 +124,45 @@ setup_python() {
     print_status "Setting up Python environment..."
     
     VENV_DIR="parallax/venv"
+    PARALLAX_SRC="parallax/src"
     
-    # Create venv
+    # Create directories
+    mkdir -p parallax
+    
+    # Create venv if it doesn't exist
     if [ ! -d "$VENV_DIR" ]; then
-        mkdir -p parallax
         $PYTHON_CMD -m venv "$VENV_DIR"
     fi
     
-    # Activate and install
+    # Activate venv
     source "$VENV_DIR/bin/activate"
     
     pip install --upgrade pip
     
-    # Install Parallax SDK
-    print_status "Installing Parallax SDK..."
-    pip install parallax-sdk
+    # Clone Parallax SDK from source if not already present
+    if [ ! -d "$PARALLAX_SRC" ]; then
+        print_status "Cloning Parallax SDK from GitHub..."
+        git clone https://github.com/NousResearch/parallax.git "$PARALLAX_SRC"
+    else
+        print_status "Parallax source already exists, updating..."
+        cd "$PARALLAX_SRC" && git pull && cd - > /dev/null
+    fi
+    
+    # Install Parallax SDK from source
+    print_status "Installing Parallax SDK from source..."
+    cd "$PARALLAX_SRC"
+    
+    # Install based on OS
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        pip install -e '.[mac]'
+    elif command -v nvidia-smi &> /dev/null; then
+        print_status "NVIDIA GPU detected, installing with GPU support..."
+        pip install -e '.[gpu]'
+    else
+        pip install -e '.[cpu]'
+    fi
+    
+    cd - > /dev/null
     
     # Install voice assistant dependencies
     print_status "Installing voice assistant dependencies..."
