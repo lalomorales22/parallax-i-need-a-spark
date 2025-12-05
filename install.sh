@@ -142,7 +142,7 @@ setup_python() {
     # Clone Parallax SDK from source if not already present
     if [ ! -d "$PARALLAX_SRC" ]; then
         print_status "Cloning Parallax SDK from GitHub..."
-        git clone https://github.com/NousResearch/parallax.git "$PARALLAX_SRC"
+        git clone https://github.com/GradientHQ/parallax.git "$PARALLAX_SRC"
     else
         print_status "Parallax source already exists, updating..."
         cd "$PARALLAX_SRC" && git pull && cd - > /dev/null
