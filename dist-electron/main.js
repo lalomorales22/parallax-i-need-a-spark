@@ -14537,7 +14537,11 @@ require$$1$4.app.whenReady().then(() => {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/client.py");
     }
     const pythonPath = findPythonPath();
-    const schedulerAddr = getSetting("host_scheduler_addr") || "";
+    let schedulerAddr = getSetting("host_scheduler_addr") || "";
+    if (!schedulerAddr && process.env.PARALLAX_HOST) {
+      schedulerAddr = process.env.PARALLAX_HOST;
+      console.log(`Using PARALLAX_HOST from env: ${schedulerAddr}`);
+    }
     let pyshell = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,
