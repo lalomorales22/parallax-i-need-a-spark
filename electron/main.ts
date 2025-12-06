@@ -126,16 +126,16 @@ app.whenReady().then(() => {
   }
 
   // IPC Handlers
-  
+
   // Helper to find Python - prefer Parallax venv with Python 3.12
   const findPythonPath = (): string => {
     const fs = require('fs');
-    
+
     // First, try the venv relative to the app directory
-    const appDir = app.isPackaged 
+    const appDir = app.isPackaged
       ? path.dirname(app.getPath('exe'))
       : path.join(__dirname, '..');
-    
+
     // Check for venv in the project directory
     const venvPaths = [
       path.join(appDir, 'parallax/venv/bin/python3.12'),
@@ -145,20 +145,20 @@ app.whenReady().then(() => {
       path.join(appDir, 'venv/bin/python3'),
       path.join(appDir, 'venv/bin/python'),
     ];
-    
+
     for (const venvPath of venvPaths) {
       if (fs.existsSync(venvPath)) {
         console.log(`Found Python venv at: ${venvPath}`);
         return venvPath;
       }
     }
-    
+
     // Fallback to homebrew Python 3.12 on macOS
     if (fs.existsSync('/opt/homebrew/bin/python3.12')) {
       console.log('Using Homebrew Python 3.12');
       return '/opt/homebrew/bin/python3.12';
     }
-    
+
     // Linux fallback
     if (fs.existsSync('/usr/bin/python3.12')) {
       return '/usr/bin/python3.12';
@@ -166,7 +166,7 @@ app.whenReady().then(() => {
     if (fs.existsSync('/usr/bin/python3')) {
       return '/usr/bin/python3';
     }
-    
+
     console.log('Falling back to system python3');
     return 'python3';
   };
@@ -236,7 +236,13 @@ app.whenReady().then(() => {
 
     // For local network, no scheduler address needed (auto-discovery)
     // For remote, pass the scheduler peer ID from settings
-    const schedulerAddr = getSetting('host_scheduler_addr') || '';
+    // OR use the PARALLAX_HOST env var if available (from run-client.sh)
+    let schedulerAddr = getSetting('host_scheduler_addr') || '';
+
+    if (!schedulerAddr && process.env.PARALLAX_HOST) {
+      schedulerAddr = process.env.PARALLAX_HOST;
+      console.log(`Using PARALLAX_HOST from env: ${schedulerAddr}`);
+    }
 
     let pyshell = new PythonShell(scriptPath, {
       mode: 'text',
@@ -270,11 +276,11 @@ app.whenReady().then(() => {
     }
     const pythonPath = findPythonPath();
     const fs = require('fs');
-    
+
     // Get host from environment or try to read from .parallax_host file
     let parallaxHost = process.env.PARALLAX_HOST || '';
     console.log(`PARALLAX_HOST env: "${parallaxHost}"`);
-    
+
     if (!parallaxHost || parallaxHost === 'localhost') {
       // Try multiple possible locations for .parallax_host file
       const possiblePaths = [
@@ -282,7 +288,7 @@ app.whenReady().then(() => {
         path.join(app.getAppPath(), '.parallax_host'),
         path.join(process.cwd(), '.parallax_host'),
       ];
-      
+
       for (const hostFilePath of possiblePaths) {
         try {
           if (fs.existsSync(hostFilePath)) {
@@ -298,12 +304,12 @@ app.whenReady().then(() => {
         }
       }
     }
-    
+
     // Default to localhost if still not set
     if (!parallaxHost) {
       parallaxHost = 'localhost';
     }
-    
+
     console.log(`Voice Assistant using Python: ${pythonPath}`);
     console.log(`Voice Assistant connecting to Parallax at: ${parallaxHost}:3001`);
 
@@ -356,7 +362,7 @@ app.whenReady().then(() => {
     if (networkDiscoveryProcess) {
       try {
         networkDiscoveryProcess.kill();
-      } catch (e) {}
+      } catch (e) { }
       networkDiscoveryProcess = null;
     }
 

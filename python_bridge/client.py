@@ -27,10 +27,51 @@ def main():
     cmd = ["parallax", "join", "-u"]  # -u disables telemetry
     
     if args.scheduler_addr:
+        scheduler_addr = args.scheduler_addr
+        
+        # Check if it's an IP address (simple check)
+        is_ip = False
+        try:
+            import socket
+            socket.inet_aton(scheduler_addr)
+            is_ip = True
+        except:
+            pass
+            
+        if is_ip or scheduler_addr == "localhost":
+            print(f"PYTHON_BRIDGE: Detected IP address: {scheduler_addr}")
+            print(f"PYTHON_BRIDGE: Fetching join command from host API...")
+            try:
+                import requests
+                response = requests.get(f"http://{scheduler_addr}:3001/node/join/command", timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    # data['data'] contains the full command, e.g. "parallax join -s PEER_ID"
+                    # We just want the peer ID usually, but let's see what it returns
+                    # Actually, let's just use the peer ID if we can extract it, or use the full command logic?
+                    # The join command might be complex.
+                    # Let's try to extract the peer ID from the response if possible, 
+                    # or just use the IP if parallax supports it (unlikely).
+                    # Wait, the /node/join/command returns a string command.
+                    # Let's try to parse it.
+                    join_cmd = data.get('data', '')
+                    print(f"PYTHON_BRIDGE: Received join command: {join_cmd}")
+                    
+                    # Extract -s argument
+                    parts = join_cmd.split()
+                    if '-s' in parts:
+                        idx = parts.index('-s')
+                        if idx + 1 < len(parts):
+                            scheduler_addr = parts[idx + 1]
+                            print(f"PYTHON_BRIDGE: Extracted Peer ID: {scheduler_addr}")
+            except Exception as e:
+                print(f"PYTHON_BRIDGE: Error fetching from host API: {e}")
+                print(f"PYTHON_BRIDGE: Falling back to using {scheduler_addr} directly")
+
         # Remote connection with explicit scheduler address
-        cmd.extend(["-s", args.scheduler_addr])
+        cmd.extend(["-s", scheduler_addr])
         print(f"PYTHON_BRIDGE: Joining Parallax network (remote mode)")
-        print(f"PYTHON_BRIDGE: Scheduler: {args.scheduler_addr}")
+        print(f"PYTHON_BRIDGE: Scheduler: {scheduler_addr}")
     else:
         # Local network auto-discovery
         print(f"PYTHON_BRIDGE: Joining Parallax network (local auto-discovery)")

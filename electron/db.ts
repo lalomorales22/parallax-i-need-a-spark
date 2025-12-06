@@ -118,6 +118,20 @@ export function upsertDevice(device: {
   memory_percent?: number;
   gpu_info?: string;
 }) {
+  // Merge with defaults to ensure all named parameters are present
+  const data = {
+    address: null,
+    port: null,
+    role: 'unknown',
+    status: 'offline',
+    personality: '',
+    model: '',
+    cpu_percent: null,
+    memory_percent: null,
+    gpu_info: null,
+    ...device
+  };
+
   const stmt = db.prepare(`
     INSERT INTO devices (device_id, name, address, port, role, status, personality, model, cpu_percent, memory_percent, gpu_info, last_seen)
     VALUES (@device_id, @name, @address, @port, @role, @status, @personality, @model, @cpu_percent, @memory_percent, @gpu_info, CURRENT_TIMESTAMP)
@@ -134,7 +148,7 @@ export function upsertDevice(device: {
       gpu_info = @gpu_info,
       last_seen = CURRENT_TIMESTAMP
   `);
-  stmt.run(device);
+  stmt.run(data);
 }
 
 export function getAllDevices() {
@@ -184,7 +198,7 @@ export function savePersonality(personality: {
     voice_settings: personality.voice_settings || personality.voice_style || '',
     system_prompt: personality.system_prompt || personality.response_style || ''
   };
-  
+
   const stmt = db.prepare(`
     INSERT INTO personalities (device_id, name, backstory, traits, voice_settings, system_prompt, updated_at)
     VALUES (@device_id, @name, @backstory, @traits, @voice_settings, @system_prompt, CURRENT_TIMESTAMP)

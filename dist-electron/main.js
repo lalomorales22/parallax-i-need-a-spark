@@ -13919,6 +13919,18 @@ function saveSetting(key, value) {
   stmt.run(key, value);
 }
 function upsertDevice(device) {
+  const data = {
+    address: null,
+    port: null,
+    role: "unknown",
+    status: "offline",
+    personality: "",
+    model: "",
+    cpu_percent: null,
+    memory_percent: null,
+    gpu_info: null,
+    ...device
+  };
   const stmt = db.prepare(`
     INSERT INTO devices (device_id, name, address, port, role, status, personality, model, cpu_percent, memory_percent, gpu_info, last_seen)
     VALUES (@device_id, @name, @address, @port, @role, @status, @personality, @model, @cpu_percent, @memory_percent, @gpu_info, CURRENT_TIMESTAMP)
@@ -13935,7 +13947,7 @@ function upsertDevice(device) {
       gpu_info = @gpu_info,
       last_seen = CURRENT_TIMESTAMP
   `);
-  stmt.run(device);
+  stmt.run(data);
 }
 function getAllDevices() {
   const stmt = db.prepare("SELECT * FROM devices ORDER BY last_seen DESC");
@@ -14618,42 +14630,57 @@ require$$1$4.app.whenReady().then(() => {
   let networkDiscoveryProcess = null;
   require$$1$4.ipcMain.handle("start-network-discovery", (_event, deviceName, role, personality, model) => {
     console.log("Starting Network Discovery...");
+    console.log(`  Device: ${deviceName}, Role: ${role}`);
+    if (networkDiscoveryProcess) {
+      try {
+        networkDiscoveryProcess.kill();
+      } catch (e) {
+      }
+      networkDiscoveryProcess = null;
+    }
     let scriptPath = path$m.join(__dirname, "../python_bridge/network_discovery.py");
     if (require$$1$4.app.isPackaged) {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/network_discovery.py");
     }
-    const pythonPath = "python3";
+    const pythonPath = findPythonPath();
+    console.log(`  Using Python: ${pythonPath}`);
     networkDiscoveryProcess = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,
       pythonOptions: ["-u"],
-      args: [deviceName, role]
+      args: [deviceName || "Spark", role || "client"]
     });
     networkDiscoveryProcess.on("message", function(message) {
-      console.log(message);
+      console.log(`Network Discovery: ${message}`);
       win == null ? void 0 : win.webContents.send("network-discovery-update", message);
       if (message.startsWith("FOUND:") || message.startsWith("LOST:")) {
         try {
-          const data = JSON.parse(message.substring(message.indexOf("{}")));
-          if (message.startsWith("FOUND:")) {
-            upsertDevice({
-              device_id: data.name,
-              name: data.name,
-              address: data.address,
-              port: data.port,
-              role: data.role,
-              status: "online",
-              personality: data.personality,
-              model: data.model
-            });
-          } else {
-            updateDeviceStatus(data.name, "offline");
+          const jsonStart = message.indexOf("{");
+          if (jsonStart !== -1) {
+            const data = JSON.parse(message.substring(jsonStart));
+            if (message.startsWith("FOUND:")) {
+              upsertDevice({
+                device_id: data.name,
+                name: data.name,
+                address: data.address,
+                port: data.port,
+                role: data.role,
+                status: "online",
+                personality: data.personality,
+                model: data.model
+              });
+            } else {
+              updateDeviceStatus(data.name, "offline");
+            }
+            win == null ? void 0 : win.webContents.send("devices-updated", getAllDevices());
           }
-          win == null ? void 0 : win.webContents.send("devices-updated", getAllDevices());
         } catch (e) {
           console.error("Error parsing network discovery message:", e);
         }
       }
+    });
+    networkDiscoveryProcess.on("error", function(err) {
+      console.error("Network Discovery Error:", err);
     });
     return "Network discovery initiated";
   });

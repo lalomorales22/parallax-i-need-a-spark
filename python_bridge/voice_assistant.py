@@ -12,7 +12,32 @@ import time
 # Constants
 # Parallax scheduler runs on port 3001, nodes on port 3000
 # Use environment variable for host address, default to localhost
-PARALLAX_HOST = os.environ.get("PARALLAX_HOST", "localhost")
+PARALLAX_HOST = os.environ.get("PARALLAX_HOST")
+
+# If not in env, try to read from .parallax_host file
+if not PARALLAX_HOST:
+    try:
+        # Check multiple locations
+        possible_paths = [
+            ".parallax_host",
+            os.path.join(os.path.dirname(os.path.dirname(__file__)), ".parallax_host"),
+            os.path.join(os.path.expanduser("~"), ".parallax_host")
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    content = f.read().strip()
+                    if content:
+                        PARALLAX_HOST = content
+                        print(f"LOG: Read host from {path}: {PARALLAX_HOST}")
+                        break
+    except Exception as e:
+        print(f"LOG: Error reading .parallax_host: {e}")
+
+# Fallback to localhost
+if not PARALLAX_HOST:
+    PARALLAX_HOST = "localhost"
+
 PARALLAX_API_URL = f"http://{PARALLAX_HOST}:3001/v1/chat/completions"
 TEMP_AUDIO_FILE = os.path.join(tempfile.gettempdir(), "spark_response.mp3")
 
