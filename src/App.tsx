@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import AsciiOrb from './components/AsciiOrb';
 import Onboarding from './components/Onboarding';
 import UnifiedDashboard from './components/UnifiedDashboard';
@@ -45,7 +45,7 @@ function App() {
             console.error('Failed to parse viz settings:', e);
           }
         }
-        
+
         // Auto-start network discovery if SPARK_MODE is set
         try {
           const sparkMode = await window.ipcRenderer.invoke('get-spark-mode');
@@ -106,7 +106,7 @@ function App() {
     setStatus('STARTING HOST...');
     const res = await window.ipcRenderer.startHost();
     setLogs(prev => [...prev, res]);
-    
+
     // Start network discovery as host
     try {
       const personality = await window.ipcRenderer.getSetting('assistant_personality') || '';
@@ -122,7 +122,7 @@ function App() {
     setStatus('STARTING CLIENT...');
     const res = await window.ipcRenderer.startClient();
     setLogs(prev => [...prev, res]);
-    
+
     // Start network discovery as client
     try {
       const personality = await window.ipcRenderer.getSetting('assistant_personality') || '';
@@ -381,7 +381,7 @@ function App() {
         }}
         style={{
           marginTop: '20px',
-          background: autoListen 
+          background: autoListen
             ? 'linear-gradient(135deg, rgba(0, 255, 100, 0.3), rgba(0, 255, 204, 0.3))'
             : 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.2))',
           border: `2px solid ${autoListen ? '#00ff64' : '#00ffcc'}`,
@@ -395,8 +395,8 @@ function App() {
           textTransform: 'uppercase',
           letterSpacing: '2px',
           transition: 'all 0.3s',
-          boxShadow: autoListen 
-            ? '0 0 30px rgba(0, 255, 100, 0.5)' 
+          boxShadow: autoListen
+            ? '0 0 30px rgba(0, 255, 100, 0.5)'
             : '0 0 15px rgba(0, 255, 204, 0.3)',
           animation: autoListen ? 'pulse 2s ease-in-out infinite' : 'none'
         }}

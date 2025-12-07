@@ -354,7 +354,7 @@ app.whenReady().then(() => {
   // Network Discovery IPC Handlers
   let networkDiscoveryProcess: PythonShell | null = null;
 
-  ipcMain.handle('start-network-discovery', (_event, deviceName, role, personality, model) => {
+  ipcMain.handle('start-network-discovery', (_event, deviceName, role, _personality, _model) => {
     console.log("Starting Network Discovery...");
     console.log(`  Device: ${deviceName}, Role: ${role}`);
 

@@ -1,21 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { defaultVisualizationSettings } from './visualization';
-import type { VisualizationSettings, WaveType, SymmetryMode } from './visualization';
 
 describe('Visualization Settings', () => {
   it('should have valid default settings', () => {
     expect(defaultVisualizationSettings).toBeDefined();
     expect(defaultVisualizationSettings.waveType).toBe('sine');
-    expect(defaultVisualizationSettings.frequency).toBeGreaterThan(0);
-    expect(defaultVisualizationSettings.amplitude).toBeGreaterThanOrEqual(0);
-    expect(defaultVisualizationSettings.amplitude).toBeLessThanOrEqual(100);
+    expect(defaultVisualizationSettings.waveFrequency).toBeGreaterThan(0);
+    expect(defaultVisualizationSettings.waveAmplitude).toBeGreaterThanOrEqual(0);
+    expect(defaultVisualizationSettings.waveAmplitude).toBeLessThanOrEqual(100);
   });
 
   it('should have valid rotation settings', () => {
     expect(defaultVisualizationSettings.rotationSpeed).toBeGreaterThanOrEqual(0);
-    expect(defaultVisualizationSettings.rotationX).toBe(true);
-    expect(defaultVisualizationSettings.rotationY).toBe(true);
-    expect(typeof defaultVisualizationSettings.rotationZ).toBe('boolean');
+    expect(defaultVisualizationSettings.rotationAxes.x).toBe(true);
+    expect(defaultVisualizationSettings.rotationAxes.y).toBe(true);
+    expect(typeof defaultVisualizationSettings.rotationAxes.z).toBe('boolean');
   });
 
   it('should have valid audio reactivity settings', () => {
