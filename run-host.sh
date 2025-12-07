@@ -49,7 +49,8 @@ cleanup_old_parallax() {
 wait_for_cluster_ready() {
     echo "Waiting for Parallax scheduler to start..."
     for i in {1..30}; do
-        if curl -s --connect-timeout 1 "http://localhost:3001/health" > /dev/null 2>&1; then
+        # Check if scheduler is responding (use root path, /health returns 404)
+        if curl -s --connect-timeout 1 "http://localhost:3001/" 2>/dev/null | grep -q "Parallax"; then
             echo "✓ Parallax scheduler is up!"
             break
         fi
