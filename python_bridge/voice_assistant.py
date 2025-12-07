@@ -49,8 +49,14 @@ def set_state(state):
     print(f"STATE:{state}")
     sys.stdout.flush()
 
-def play_audio_with_afplay(file_path):
-    """Use macOS afplay to play audio - avoids pygame/pyaudio conflicts"""
+def get_platform():
+    """Detect the operating system"""
+    import platform
+    system = platform.system().lower()
+    return system
+
+def play_audio(file_path):
+    """Cross-platform audio playback"""
     try:
         # Wait for file to be fully written and closed
         time.sleep(0.2)
@@ -64,44 +70,115 @@ def play_audio_with_afplay(file_path):
         if file_size < 100:
             log(f"Audio file too small ({file_size} bytes), may be corrupted")
             return False
+        
+        system = get_platform()
+        
+        if system == "darwin":
+            # macOS - use afplay
+            return play_with_afplay(file_path)
+        elif system == "linux":
+            # Linux - try multiple players
+            return play_on_linux(file_path)
+        else:
+            log(f"Unsupported platform: {system}")
+            return False
             
-        # afplay is a built-in macOS command that plays audio files
-        # Use -q 1 for slightly lower quality but more reliable playback
-        result = subprocess.run(
-            ["afplay", file_path], 
-            capture_output=True, 
-            text=True,
-            timeout=60  # 60 second timeout for long responses
-        )
-        if result.returncode != 0:
-            log(f"afplay error (code {result.returncode}): {result.stderr.strip()}")
-            # Fallback: try converting with ffmpeg then playing
-            return try_ffmpeg_fallback(file_path)
-        return True
-    except subprocess.TimeoutExpired:
-        log("Audio playback timed out")
-        return False
     except Exception as e:
         log(f"Audio playback error: {e}")
         return False
 
-def try_ffmpeg_fallback(file_path):
-    """Convert audio with ffmpeg and try playing again"""
+def play_with_afplay(file_path):
+    """Play audio with macOS afplay"""
+    try:
+        result = subprocess.run(
+            ["afplay", file_path], 
+            capture_output=True, 
+            text=True,
+            timeout=60
+        )
+        if result.returncode != 0:
+            log(f"afplay error: {result.stderr.strip()}")
+            return try_ffplay_fallback(file_path)
+        return True
+    except subprocess.TimeoutExpired:
+        log("Audio playback timed out")
+        return False
+    except FileNotFoundError:
+        log("afplay not found")
+        return try_ffplay_fallback(file_path)
+    except Exception as e:
+        log(f"afplay error: {e}")
+        return False
+
+def play_on_linux(file_path):
+    """Play audio on Linux using various players"""
+    # Try ffplay first (most reliable, comes with ffmpeg)
+    try:
+        result = subprocess.run(
+            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", file_path],
+            capture_output=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # Try mpv (lightweight player)
+    try:
+        result = subprocess.run(
+            ["mpv", "--no-video", "--really-quiet", file_path],
+            capture_output=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # Try aplay with ffmpeg conversion (for systems with only ALSA)
     try:
         wav_path = file_path.replace('.mp3', '_converted.wav')
-        # Convert to WAV which is more reliable on macOS
         convert_result = subprocess.run(
             ["ffmpeg", "-y", "-i", file_path, "-ar", "44100", "-ac", "2", wav_path],
             capture_output=True,
             timeout=30
         )
         if convert_result.returncode == 0 and os.path.exists(wav_path):
-            result = subprocess.run(["afplay", wav_path], capture_output=True, timeout=60)
-            os.remove(wav_path)  # Clean up
-            return result.returncode == 0
-    except Exception as e:
-        log(f"FFmpeg fallback failed: {e}")
+            result = subprocess.run(["aplay", wav_path], capture_output=True, timeout=60)
+            os.remove(wav_path)
+            if result.returncode == 0:
+                return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # Try paplay (PulseAudio)
+    try:
+        result = subprocess.run(
+            ["paplay", file_path],
+            capture_output=True,
+            timeout=60
+        )
+        if result.returncode == 0:
+            return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    log("No audio player available on Linux. Install ffmpeg, mpv, or pulseaudio-utils")
     return False
+
+def try_ffplay_fallback(file_path):
+    """Fallback to ffplay for audio playback"""
+    try:
+        result = subprocess.run(
+            ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", file_path],
+            capture_output=True,
+            timeout=60
+        )
+        return result.returncode == 0
+    except Exception as e:
+        log(f"ffplay fallback failed: {e}")
+        return False
 
 async def text_to_speech(text, voice="en-US-AriaNeural"):
     try:
@@ -121,7 +198,8 @@ async def text_to_speech(text, voice="en-US-AriaNeural"):
             return
             
         # Use sync audio player (afplay blocks until done)
-        success = play_audio_with_afplay(TEMP_AUDIO_FILE)
+        # Use cross-platform audio player
+        success = play_audio(TEMP_AUDIO_FILE)
         if not success:
             log("Audio playback failed, response was: " + text[:50])
             

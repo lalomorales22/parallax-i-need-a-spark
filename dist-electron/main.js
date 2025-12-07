@@ -14584,7 +14584,7 @@ require$$1$4.app.whenReady().then(() => {
     });
     return "Client process initiated";
   });
-  require$$1$4.ipcMain.handle("start-voice", (_event) => {
+  require$$1$4.ipcMain.handle("start-voice", async (_event) => {
     console.log("Starting Voice Assistant...");
     if (voiceAssistantProcess) {
       try {
@@ -14599,6 +14599,34 @@ require$$1$4.app.whenReady().then(() => {
     }
     const pythonPath = findPythonPath();
     const fs2 = require("fs");
+    const assistantName = getSetting("assistant_name") || "Spark";
+    const assistantPersonality = getSetting("assistant_personality") || "";
+    const deviceId = getSetting("device_id") || "local";
+    const personalityRecord = getPersonality(deviceId);
+    let systemPrompt = "";
+    if (personalityRecord == null ? void 0 : personalityRecord.system_prompt) {
+      systemPrompt = personalityRecord.system_prompt;
+    } else if (personalityRecord) {
+      const parts = [];
+      parts.push(`You are ${personalityRecord.name || assistantName}, an AI voice assistant.`);
+      if (personalityRecord.backstory) {
+        parts.push(`Background: ${personalityRecord.backstory}`);
+      }
+      if (personalityRecord.traits) {
+        parts.push(`Personality traits: ${personalityRecord.traits}`);
+      }
+      if (assistantPersonality) {
+        parts.push(assistantPersonality);
+      }
+      parts.push("Keep your responses concise and conversational since this is voice-based interaction.");
+      systemPrompt = parts.join(" ");
+    } else if (assistantPersonality) {
+      systemPrompt = `You are ${assistantName}, an AI voice assistant. ${assistantPersonality} Keep your responses concise and conversational.`;
+    } else {
+      systemPrompt = `You are ${assistantName}, a helpful and witty AI assistant. Keep your answers concise and conversational.`;
+    }
+    console.log(`Voice Assistant Name: ${assistantName}`);
+    console.log(`Voice Assistant System Prompt: ${systemPrompt.substring(0, 100)}...`);
     let parallaxHost = process.env.PARALLAX_HOST || "";
     console.log(`PARALLAX_HOST env: "${parallaxHost}"`);
     if (!parallaxHost || parallaxHost === "localhost") {
@@ -14631,7 +14659,7 @@ require$$1$4.app.whenReady().then(() => {
       mode: "text",
       pythonPath,
       pythonOptions: ["-u"],
-      args: [],
+      args: ["--system-prompt", systemPrompt, "--name", assistantName],
       env: {
         ...process.env,
         PARALLAX_HOST: parallaxHost

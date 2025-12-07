@@ -66,7 +66,7 @@ wait_for_cluster_ready() {
     echo "💡 Tip: If you have no clients, run with -n 0 to use web UI setup"
     echo ""
     
-    for i in {1..120}; do
+    for i in {1..30}; do
         # Get cluster status (streaming endpoint, so just get first line)
         local status_json=$(timeout 2 curl -s http://localhost:3001/cluster/status 2>/dev/null | head -1)
         if [ -n "$status_json" ]; then
@@ -81,7 +81,7 @@ wait_for_cluster_ready() {
                 echo "  Nodes: $nodes"
                 return 0
             elif [ -n "$status" ]; then
-                echo "  [$i/120] Status: $status (nodes: $nodes) - waiting..."
+                echo "  [$i/30] Status: $status (nodes: $nodes) - waiting..."
             fi
         fi
         sleep 2
@@ -92,8 +92,8 @@ wait_for_cluster_ready() {
     return 1
 }
 
-# Check if Parallax is already running
-if curl -s --connect-timeout 2 "http://localhost:3001/health" > /dev/null 2>&1; then
+# Check if Parallax is already running (use root path, /health returns 404)
+if curl -s --connect-timeout 2 "http://localhost:3001/" 2>/dev/null | grep -q "Parallax"; then
     echo "✓ Parallax is already running on port 3001"
     echo ""
     echo "Starting Electron app..."
