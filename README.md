@@ -1,6 +1,7 @@
 # Parallax "I Need a Spark" Voice Assistant
 ## 🎯 NVIDIA DGX Spark Competition Entry
-<img width="655" height="661" alt="Screenshot 2025-12-05 at 10 18 31 AM" src="https://github.com/user-attachments/assets/fc7d1f10-233a-4eb9-872e-ce340a7d89cb" />
+
+<img width="1536" height="1024" alt="8324fb57-7abe-4977-9ae9-680e85b6df2a" src="https://github.com/user-attachments/assets/49814050-efde-46e4-917c-fbb7a6ab8898" />
 
 > **Transform your home network into a distributed network of AI voice assistants. Each device gets its own personality, but they all share the same brain.**
 
