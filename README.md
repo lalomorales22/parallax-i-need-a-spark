@@ -171,9 +171,6 @@ On your other devices (laptops, Raspberry Pis, etc.):
 
 # Or run without argument - it will prompt for host IP and save it
 ./run-client.sh
-
-# If port 3000 is in use (e.g., by another service), specify a different port:
-./run-client.sh 192.168.0.99 --port 3005
 ```
 
 **What happens when you run the client:**
@@ -185,6 +182,8 @@ On your other devices (laptops, Raspberry Pis, etc.):
 5. ✅ The local node processes inference requests from the host
 
 **Important**: The client script now actually **joins the Parallax cluster** as a worker node. This is separate from just running the Electron UI - it makes your device contribute compute power to the distributed AI cluster.
+
+**Note**: Parallax automatically handles node port configuration. The node will auto-discover the schedulerand join the cluster.
 
 **Tip:** The dashboard shows your current mode (🟢 = HOST, 🟣 = CLIENT)
 
@@ -198,7 +197,7 @@ Here's an example home network setup:
 | MacBook Pro M1 | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
 | Raspberry Pi 5 | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
 | Asus T100 (Debian) | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
-| Dell Inspiron (Omarchy) | Client Node | DHCP | `./run-client.sh 192.168.0.99 --port 3005` |
+| Dell Inspiron (Omarchy) | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
 
 **Note**: The host uses `-n 4` because we're expecting 4 client nodes to join. This prevents the "waiting for nodes" error.
 

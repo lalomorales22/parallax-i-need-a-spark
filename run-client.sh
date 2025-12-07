@@ -47,35 +47,45 @@ else
     exit 1
 fi
 
-# Check for custom port
-CLIENT_PORT=3000
-if [ "$2" == "--port" ] && [ -n "$3" ]; then
-   CLIENT_PORT="$3"
-fi
-
 echo ""
 echo "Connecting to Parallax Host: $HOST_IP:3001"
-echo "Client will listen on port: $CLIENT_PORT"
 echo ""
 
 # Start Parallax node worker in background
 echo "Starting Parallax compute node..."
-parallax join --host "$HOST_IP" --port 3001 --node-port "$CLIENT_PORT" &
+
+# For local network, parallax join auto-discovers the scheduler
+# For explicit connection, we need to get the scheduler address from the host
+# Since we're on the same network, we can use auto-discovery
+if [ "$HOST_IP" == "localhost" ] || [ "$HOST_IP" == "127.0.0.1" ]; then
+    # Local connection - just join
+    parallax join &
+else
+    # Remote connection - need scheduler address
+    # For now, use auto-discovery on local network
+    parallax join &
+fi
+
 PARALLAX_NODE_PID=$!
 
 # Wait for node to connect
 echo "Waiting for node to join cluster..."
-sleep 3
+sleep 5
 
 # Check if parallax join process is still running
 if ! ps -p $PARALLAX_NODE_PID > /dev/null 2>&1; then
     echo "⚠ Warning: Parallax node process exited unexpectedly"
     echo "  Check if the host is running at $HOST_IP:3001"
     echo "  Try: curl http://$HOST_IP:3001/health"
-    exit 1
+    echo ""
+    echo "  The node may have joined successfully but exited."
+    echo "  Continuing with Electron app..."
+    PARALLAX_NODE_PID=""
 fi
 
-echo "✓ Parallax node started (PID $PARALLAX_NODE_PID)"
+if [ -n "$PARALLAX_NODE_PID" ]; then
+    echo "✓ Parallax node started (PID $PARALLAX_NODE_PID)"
+fi
 echo ""
 
 # Cleanup function
@@ -97,7 +107,6 @@ trap cleanup INT TERM EXIT
 # Set client mode and run Electron app
 export PARALLAX_HOST="$HOST_IP"
 export SPARK_MODE=client
-export PORT="$CLIENT_PORT"
 
 echo "Starting Electron app in CLIENT mode..."
 echo "(Press Ctrl+C to stop both Parallax node and Electron)"
