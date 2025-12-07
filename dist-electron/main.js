@@ -14632,7 +14632,7 @@ require$$1$4.app.whenReady().then(() => {
     require$$1$4.app.quit();
   });
   let networkDiscoveryProcess = null;
-  require$$1$4.ipcMain.handle("start-network-discovery", (_event, deviceName, role, personality, model) => {
+  require$$1$4.ipcMain.handle("start-network-discovery", (_event, deviceName, role, _personality, _model) => {
     console.log("Starting Network Discovery...");
     console.log(`  Device: ${deviceName}, Role: ${role}`);
     if (networkDiscoveryProcess) {
