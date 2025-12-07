@@ -37,6 +37,7 @@ interface UnifiedDashboardProps {
   onStartHost: () => void;
   onStartClient: () => void;
   onStartVoice: () => void;
+  onStopVoice: () => void;
   autoListen: boolean;
   onAutoListenChange: (value: boolean) => void;
 }
@@ -54,6 +55,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
   onStartHost,
   onStartClient,
   onStartVoice,
+  onStopVoice,
   autoListen,
   onAutoListenChange
 }) => {
@@ -150,6 +152,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
               setSparkMode('client');
             }}
             onStartVoice={onStartVoice}
+            onStopVoice={onStopVoice}
             autoListen={autoListen}
             onAutoListenChange={onAutoListenChange}
             sparkMode={sparkMode}
@@ -431,11 +434,12 @@ const ControlsTab: React.FC<{
   onStartHost: () => void;
   onStartClient: () => void;
   onStartVoice: () => void;
+  onStopVoice: () => void;
   autoListen: boolean;
   onAutoListenChange: (value: boolean) => void;
   sparkMode: string;
   parallaxHost: string;
-}> = ({ onStartHost, onStartClient, onStartVoice, autoListen, onAutoListenChange, sparkMode, parallaxHost }) => {
+}> = ({ onStartHost, onStartClient, onStartVoice, onStopVoice, autoListen, onAutoListenChange, sparkMode, parallaxHost }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div style={{
@@ -445,7 +449,7 @@ const ControlsTab: React.FC<{
         border: '1px solid rgba(0, 255, 204, 0.2)'
       }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', opacity: 0.8 }}>VOICE SETTINGS</h3>
-        
+
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -469,6 +473,19 @@ const ControlsTab: React.FC<{
         >
           🎤 Start Voice Assistant
         </button>
+
+        <button
+          onClick={onStopVoice}
+          style={{
+            ...buttonStyle,
+            width: '100%',
+            background: 'linear-gradient(135deg, rgba(255, 0, 85, 0.2), rgba(255, 0, 85, 0.3))',
+            borderColor: '#ff0055',
+            color: '#ff0055'
+          }}
+        >
+          🛑 Stop Voice Assistant
+        </button>
       </div>
 
       <div style={{
@@ -478,7 +495,7 @@ const ControlsTab: React.FC<{
         border: '1px solid rgba(255, 0, 255, 0.2)'
       }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: '14px', opacity: 0.8, color: '#ff00ff' }}>NETWORK MODE</h3>
-        
+
         {/* Show current mode based on how the app was started */}
         {sparkMode === 'host' ? (
           <div style={{

@@ -138,26 +138,39 @@ The install script will handle the rest!
 Your most powerful machine should be the host (e.g., Mac Mini 24GB, IP 192.168.0.99):
 
 ```bash
-# Basic usage - auto-detects and uses default model
-./run-host.sh
+# Auto-configure mode (RECOMMENDED) - skips Parallax web UI
+./run-host.sh              # Expects at least 1 client node
+./run-host.sh -n 2         # Expects exactly 2 client nodes  
+./run-host.sh -n 4         # Expects exactly 4 client nodes
 
-# Specify expected number of client nodes (recommended for multi-device setup)
-./run-host.sh -n 4  # Wait for 4 client nodes before going 'available'
+# Manual setup mode - opens Parallax web UI at http://192.168.0.99:3001
+./run-host.sh -n 0
 
 # Use a different model
 ./run-host.sh -m Qwen/Qwen2.5-3B
 
 # Combine options
-./run-host.sh -m Qwen/Qwen2.5-3B -n 4
+./run-host.sh -m Qwen/Qwen2.5-3B -n 2
 
 # What it does:
 # 1. Activates parallax/venv
 # 2. Starts Parallax scheduler on port 3001
-# 3. Waits for specified number of nodes to join (if -n flag used)
-# 4. Starts Electron app with SPARK_MODE=host
+# 3. Auto-configures cluster (or opens web UI if -n 0)
+# 4. Waits for specified number of nodes to join
+# 5. Starts Electron app with SPARK_MODE=host
 ```
 
-**💡 Tip**: Use the `-n` flag to specify how many client nodes you expect. The scheduler will wait for all nodes to join before becoming "available". This prevents premature inference attempts.
+**💡 Auto-Configure Mode (Default)**
+- Skips the Parallax web UI setup page
+- Cluster auto-configures with sensible defaults
+- Clients can immediately join with `./run-client.sh <HOST_IP>`
+- Recommended for normal use
+
+**🌐 Manual Setup Mode (`-n 0`)**
+- Opens Parallax web UI at `http://<HOST_IP>:3001`
+- Configure cluster topology manually
+- Useful for advanced configurations
+- Access the UI to see cluster visualization
 
 The host runs the Parallax scheduler on port 3001 and accepts node connections.
 

@@ -295,6 +295,15 @@ app.whenReady().then(() => {
 
   ipcMain.handle('start-voice', (_event) => {
     console.log("Starting Voice Assistant...");
+
+    // Stop any existing voice assistant process
+    if (voiceAssistantProcess) {
+      try {
+        voiceAssistantProcess.kill();
+      } catch (e) { }
+      voiceAssistantProcess = null;
+    }
+
     let scriptPath = path.join(__dirname, '../python_bridge/voice_assistant.py');
     if (app.isPackaged) {
       scriptPath = path.join(process.resourcesPath, 'python_bridge/voice_assistant.py');
@@ -338,7 +347,7 @@ app.whenReady().then(() => {
     console.log(`Voice Assistant using Python: ${pythonPath}`);
     console.log(`Voice Assistant connecting to Parallax at: ${parallaxHost}:3001`);
 
-    let pyshell = new PythonShell(scriptPath, {
+    voiceAssistantProcess = new PythonShell(scriptPath, {
       mode: 'text',
       pythonPath: pythonPath,
       pythonOptions: ['-u'],
@@ -349,7 +358,7 @@ app.whenReady().then(() => {
       }
     });
 
-    pyshell.on('message', function (message) {
+    voiceAssistantProcess.on('message', function (message) {
       console.log(message);
       if (message.startsWith('STATE:')) {
         win?.webContents.send('state-update', message.replace('STATE:', ''));
@@ -360,21 +369,36 @@ app.whenReady().then(() => {
       }
     });
 
-    pyshell.end(function (err) {
+    voiceAssistantProcess.end(function (err) {
       if (err) {
         console.error('Voice Assistant Error:', err);
         win?.webContents.send('log-update', `ERROR: ${err.message}`);
       }
       win?.webContents.send('log-update', 'Voice Assistant terminated.');
       win?.webContents.send('state-update', 'IDLE');
+      voiceAssistantProcess = null;
     });
 
     return "Voice Assistant initiated";
   });
 
+  ipcMain.handle('stop-voice', () => {
+    if (voiceAssistantProcess) {
+      voiceAssistantProcess.kill();
+      voiceAssistantProcess = null;
+      win?.webContents.send('log-update', 'Voice Assistant stopped.');
+      win?.webContents.send('state-update', 'IDLE');
+      return "Voice Assistant stopped";
+    }
+    return "No voice assistant running";
+  });
+
   ipcMain.handle('close-app', () => {
     app.quit();
   });
+
+  // Voice Assistant Process Tracking
+  let voiceAssistantProcess: PythonShell | null = null;
 
   // Network Discovery IPC Handlers
   let networkDiscoveryProcess: PythonShell | null = null;

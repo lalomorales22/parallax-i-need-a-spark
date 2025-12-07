@@ -148,6 +148,13 @@ function App() {
     setLogs(prev => [...prev, res]);
   };
 
+  const handleStopVoice = async () => {
+    setStatus('STOPPING VOICE...');
+    const res = await window.ipcRenderer.stopVoice();
+    setLogs(prev => [...prev, res]);
+    setAutoListen(false);
+  };
+
   const handleClose = () => {
     window.ipcRenderer.closeApp();
   };
@@ -350,6 +357,7 @@ function App() {
         onStartHost={handleStartHost}
         onStartClient={handleStartClient}
         onStartVoice={handleStartVoice}
+        onStopVoice={handleStopVoice}
         autoListen={autoListen}
         onAutoListenChange={setAutoListen}
       />

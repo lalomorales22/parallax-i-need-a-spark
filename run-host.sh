@@ -46,7 +46,7 @@ else
     
     # Parse arguments
     MODEL="Qwen/Qwen3-0.6B"
-    NUM_NODES=""
+    NUM_NODES="1"  # Default: expect at least 1 node (skips web UI setup)
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -66,8 +66,11 @@ else
     done
     
     echo "Model: $MODEL"
-    if [ -n "$NUM_NODES" ]; then
-        echo "Expected nodes: $NUM_NODES"
+    if [ -n "$NUM_NODES" ] && [ "$NUM_NODES" != "0" ]; then
+        echo "Expected nodes: $NUM_NODES (auto-configure mode)"
+        echo "This skips the Parallax web UI - cluster auto-configures!"
+    else
+        echo "Manual setup mode - open http://$LOCAL_IP:3001 to configure"
     fi
     echo "Scheduler will be available at: http://$LOCAL_IP:3001"
     echo ""

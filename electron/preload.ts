@@ -29,6 +29,7 @@ try {
     startHost: () => ipcRenderer.invoke('start-host'),
     startClient: () => ipcRenderer.invoke('start-client'),
     startVoice: () => ipcRenderer.invoke('start-voice'),
+    stopVoice: () => ipcRenderer.invoke('stop-voice'),
     closeApp: () => ipcRenderer.invoke('close-app'),
 
     // Network Discovery
