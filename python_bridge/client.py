@@ -70,8 +70,11 @@ def main():
 
         # Remote connection with explicit scheduler address
         cmd.extend(["-s", scheduler_addr])
+        # Always use relay for remote connections to ensure connectivity
+        cmd.append("-r")
         print(f"PYTHON_BRIDGE: Joining Parallax network (remote mode)")
         print(f"PYTHON_BRIDGE: Scheduler: {scheduler_addr}")
+        print(f"PYTHON_BRIDGE: Using relay servers for better connectivity")
     else:
         # Local network auto-discovery
         print(f"PYTHON_BRIDGE: Joining Parallax network (local auto-discovery)")
