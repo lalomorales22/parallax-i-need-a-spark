@@ -16,7 +16,9 @@
 
 - 🚀 **Universal Installer** - Single `install.sh` for macOS, Linux, Raspberry Pi with auto-dependency detection
 - 🌐 **Host/Client Scripts** - Easy `run-host.sh` and `run-client.sh` for distributed setup
-- 🔧 **Port Conflict Resolution** - Use `./run-client.sh IP --port 3005` if port 3000 is in use
+- 🔄 **Cluster Readiness Check** - Host waits for cluster to reach "available" status before launching
+- 🔌 **Smart Client Connection** - Clients fetch scheduler address from host API for reliable P2P joining
+- 🧹 **Port Cleanup** - Automatically kills zombie processes on port 3001 before starting
 - 🖥️ **Mode Detection** - Dashboard now shows whether you're running as HOST or CLIENT
 - 💾 **Per-Device Database** - Each device maintains its own personality and settings
 - 🔊 **Audio Fix** - Native `afplay` on macOS with FFmpeg fallback for reliable audio playback
@@ -24,6 +26,7 @@
 - 🌍 **Network Discovery** - mDNS/Bonjour auto-discovery now properly detects local network IP
 - 🔗 **Client Connectivity** - Clients now correctly connect to host IP (saves to `.parallax_host` file)
 - 🐍 **Venv Integration** - All Python scripts use the virtual environment automatically
+- 📦 **Multi-Platform Install** - Improved package fallbacks for Debian 13, Omarchy, and edge cases
 
 ## The Vision: A Network of Minds
 
@@ -119,9 +122,9 @@ The installer automatically:
 
 **Supported Platforms:**
 - ✅ **macOS** (Intel & Apple Silicon M1/M2/M3/M4)
-- ✅ **Debian 13** (Trixie)
-- ✅ **Ubuntu/Xubuntu**
-- ✅ **Arch Linux** (including Omarchy)
+- ✅ **Debian 13** (Trixie) - with package fallbacks for newer naming conventions
+- ✅ **Ubuntu/Xubuntu** - automatically detected
+- ✅ **Arch Linux** (including Omarchy, EndeavourOS, Manjaro)
 - ✅ **Raspberry Pi OS** (Pi Zero 2 W, Pi 4, Pi 5)
 - ✅ **Fedora**
 
@@ -153,18 +156,19 @@ Your most powerful machine should be the host (e.g., Mac Mini 24GB, IP 192.168.0
 ./run-host.sh -m Qwen/Qwen2.5-3B -n 2
 
 # What it does:
-# 1. Activates parallax/venv
-# 2. Starts Parallax scheduler on port 3001
-# 3. Auto-configures cluster (or opens web UI if -n 0)
-# 4. Waits for specified number of nodes to join
+# 1. Cleans up any zombie processes on port 3001
+# 2. Activates parallax/venv
+# 3. Starts Parallax scheduler on port 3001 (bound to 0.0.0.0)
+# 4. Waits for cluster to reach "available" status
 # 5. Starts Electron app with SPARK_MODE=host
 ```
 
 **💡 Auto-Configure Mode (Default)**
 - Skips the Parallax web UI setup page
 - Cluster auto-configures with sensible defaults
+- **Waits for cluster to be ready** before launching Electron
+- Shows real-time status: `[5/120] Status: waiting (nodes: 0)`
 - Clients can immediately join with `./run-client.sh <HOST_IP>`
-- Recommended for normal use
 
 **🌐 Manual Setup Mode (`-n 0`)**
 - Opens Parallax web UI at `http://<HOST_IP>:3001`
@@ -189,14 +193,21 @@ On your other devices (laptops, Raspberry Pis, etc.):
 **What happens when you run the client:**
 
 1. ✅ Saves the host IP to `.parallax_host` for future sessions
-2. ✅ **Joins the Parallax cluster** as a compute node using `parallax join`
-3. ✅ Waits for successful connection to the scheduler
-4. ✅ Starts the Electron app with `SPARK_MODE=client`
-5. ✅ The local node processes inference requests from the host
+2. ✅ **Checks host reachability** before attempting to join
+3. ✅ **Fetches scheduler address** from host API (`/node/join/command`)
+4. ✅ **Joins the Parallax cluster** using `parallax join -s <scheduler_addr>`
+5. ✅ **Verifies connection** by polling cluster status
+6. ✅ Starts the Electron app with `SPARK_MODE=client`
+7. ✅ The local node processes inference requests from the host
+
+**Smart Connection Logic:**
+- **Local host**: Uses auto-discovery (`parallax join`)
+- **Remote with scheduler address**: Uses direct connection (`parallax join -s <addr>`)
+- **Fallback**: Uses relay servers (`parallax join -r`)
 
 **Important**: The client script now actually **joins the Parallax cluster** as a worker node. This is separate from just running the Electron UI - it makes your device contribute compute power to the distributed AI cluster.
 
-**Note**: Parallax automatically handles node port configuration. The node will auto-discover the schedulerand join the cluster.
+**Note**: The improved client script prevents duplicate node registrations by verifying connections.
 
 **Tip:** The dashboard shows your current mode (🟢 = HOST, 🟣 = CLIENT)
 

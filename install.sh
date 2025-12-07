@@ -50,9 +50,18 @@ detect_os() {
     elif [ -f /etc/arch-release ]; then
         OS="arch"
         PKG_MANAGER="pacman"
-        # Detect Omarchy (Arch-based)
-        if [ -f /etc/omarchy-release ] || grep -qi "omarchy" /etc/os-release 2>/dev/null; then
-            print_status "Detected Omarchy (Arch-based)"
+        # Detect Omarchy and other Arch-based distros
+        if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            if [[ "$ID" == "omarchy" ]] || [[ "$ID_LIKE" == *"omarchy"* ]] || grep -qi "omarchy" /etc/os-release 2>/dev/null; then
+                print_status "Detected Omarchy (Arch-based)"
+            elif [[ "$ID" == "endeavouros" ]]; then
+                print_status "Detected EndeavourOS (Arch-based)"
+            elif [[ "$ID" == "manjaro" ]]; then
+                print_status "Detected Manjaro (Arch-based)"
+            else
+                print_status "Detected Arch Linux"
+            fi
         else
             print_status "Detected Arch Linux"
         fi
@@ -110,14 +119,29 @@ install_system_deps() {
         apt)
             # Debian/Ubuntu/Raspberry Pi OS/Xubuntu
             sudo apt update
+            
+            # Core packages that exist on all Debian-based systems
             sudo apt install -y \
                 python3 python3-pip python3-venv python3-dev \
                 nodejs npm \
-                portaudio19-dev python3-pyaudio \
-                ffmpeg libespeak-dev \
-                libasound2-dev \
+                ffmpeg \
                 build-essential \
-                git curl
+                git curl \
+                libasound2-dev || true
+            
+            # PortAudio packages - names vary by distro version
+            sudo apt install -y portaudio19-dev 2>/dev/null || \
+                sudo apt install -y libportaudio2 libportaudiocpp0 2>/dev/null || \
+                print_warning "PortAudio not available from apt, will try pip"
+            
+            # PyAudio - may need to be installed via pip on newer Debian
+            sudo apt install -y python3-pyaudio 2>/dev/null || \
+                print_warning "python3-pyaudio not available, will install via pip"
+            
+            # espeak packages - names vary
+            sudo apt install -y libespeak-dev 2>/dev/null || \
+                sudo apt install -y espeak-ng libespeak-ng-dev 2>/dev/null || \
+                print_warning "espeak not available from apt"
             ;;
         pacman)
             # Arch Linux / OmarChy / Omarchy
@@ -241,12 +265,18 @@ setup_python() {
     
     # Install based on OS
     if [[ "$OSTYPE" == "darwin"* ]]; then
+        print_status "Installing Parallax SDK for macOS..."
         pip install -e '.[mac]' || print_warning "Parallax install had issues, continuing..."
     elif command -v nvidia-smi &> /dev/null; then
         print_status "NVIDIA GPU detected, installing with GPU support..."
         pip install -e '.[gpu]' || print_warning "Parallax install had issues, continuing..."
     else
-        pip install -e '.[cpu]' || print_warning "Parallax install had issues, continuing..."
+        # Try mac backend for Apple Silicon Linux (rare), otherwise try base install
+        print_status "Installing Parallax SDK (CPU mode)..."
+        # First try [cpu] extra, if it doesn't exist fall back to base install
+        pip install -e '.[cpu]' 2>/dev/null || \
+            pip install -e '.' || \
+            print_warning "Parallax install had issues, continuing..."
     fi
     
     cd "$SCRIPT_DIR"
@@ -327,8 +357,9 @@ npm run dev
 EOF
     chmod +x run.sh
     
-    # Create client-only script (joins existing network)
-    cat > run-client.sh << 'EOF'
+    # Only create run-client.sh if it doesn't exist (preserve improvements)
+    if [ ! -f "run-client.sh" ]; then
+        cat > run-client.sh << 'EOF'
 #!/bin/bash
 # Run Spark as a Client (joins host network)
 
@@ -344,9 +375,17 @@ echo ""
 # Start app in client mode
 SPARK_MODE=client npm run dev
 EOF
-    chmod +x run-client.sh
+        chmod +x run-client.sh
+        print_success "Run scripts created: ./run.sh and ./run-client.sh"
+    else
+        print_status "Preserving existing run-client.sh"
+        print_success "Run script created: ./run.sh"
+    fi
     
-    print_success "Run scripts created: ./run.sh and ./run-client.sh"
+    # Ensure run-host.sh exists (but don't overwrite if already there)
+    if [ ! -f "run-host.sh" ]; then
+        print_warning "run-host.sh not found - please pull latest version from git"
+    fi
 }
 
 # Main installation
