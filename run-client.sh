@@ -53,38 +53,37 @@ echo ""
 
 # Start Parallax node worker in background
 echo "Starting Parallax compute node..."
+echo "Attempting to join scheduler at $HOST_IP..."
 
-# For local network, parallax join auto-discovers the scheduler
-# For explicit connection, we need to get the scheduler address from the host
-# Since we're on the same network, we can use auto-discovery
+# Use relay servers for more reliable connection across networks
+# This avoids the "No peers found" error from mDNS auto-discovery
 if [ "$HOST_IP" == "localhost" ] || [ "$HOST_IP" == "127.0.0.1" ]; then
     # Local connection - just join
     parallax join &
 else
-    # Remote connection - need scheduler address
-    # For now, use auto-discovery on local network
-    parallax join &
+    # Remote connection - use relay servers for reliable P2P connection
+    echo "Using relay servers for P2P connection..."
+    parallax join -r &
 fi
 
 PARALLAX_NODE_PID=$!
 
 # Wait for node to connect
-echo "Waiting for node to join cluster..."
-sleep 5
+echo "Waiting for node to join cluster (this may take 10-15 seconds)..."
+sleep 10
 
 # Check if parallax join process is still running
 if ! ps -p $PARALLAX_NODE_PID > /dev/null 2>&1; then
-    echo "⚠ Warning: Parallax node process exited unexpectedly"
-    echo "  Check if the host is running at $HOST_IP:3001"
-    echo "  Try: curl http://$HOST_IP:3001/health"
+    echo "⚠ Warning: Parallax node process exited"
+    echo "  The node may have successfully joined and then exited."
+    echo "  Check the host logs to see if this node appears in the cluster."
     echo ""
-    echo "  The node may have joined successfully but exited."
     echo "  Continuing with Electron app..."
     PARALLAX_NODE_PID=""
 fi
 
 if [ -n "$PARALLAX_NODE_PID" ]; then
-    echo "✓ Parallax node started (PID $PARALLAX_NODE_PID)"
+    echo "✓ Parallax node process running (PID $PARALLAX_NODE_PID)"
 fi
 echo ""
 
