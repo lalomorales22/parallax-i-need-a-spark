@@ -70,14 +70,26 @@ else
     echo "(Press Ctrl+C to stop both Parallax and Electron)"
     echo ""
     
+    # Cleanup function
+    cleanup() {
+        echo ""
+        echo "Shutting down..."
+        if [ -n "$PARALLAX_PID" ]; then
+            echo "Stopping Parallax (PID $PARALLAX_PID)..."
+            kill $PARALLAX_PID 2>/dev/null
+            # Wait a moment for graceful shutdown
+            sleep 2
+            # Force kill if still running to ensure port is freed
+            kill -9 $PARALLAX_PID 2>/dev/null
+        fi
+        exit
+    }
+
     # Trap to kill Parallax when script exits
-    trap "echo 'Shutting down...'; kill $PARALLAX_PID 2>/dev/null; exit" INT TERM
+    trap cleanup INT TERM EXIT
     
     # Set host mode and run
     export SPARK_MODE=host
     export PARALLAX_HOST=localhost
     npm run dev
-    
-    # Cleanup
-    kill $PARALLAX_PID 2>/dev/null
 fi
