@@ -1,0 +1,36 @@
+# Parallax Spark - Docker Compose
+# Use this to run compute nodes as Docker containers
+
+services:
+  # Compute node - joins the host's Parallax cluster
+  spark-node:
+    build: .
+    container_name: spark-node
+    network_mode: host  # Required for P2P communication
+    environment:
+      - PARALLAX_HOST=${PARALLAX_HOST:-192.168.0.99}  # Set this to your host's IP
+    restart: unless-stopped
+    
+  # Alternative: Multiple nodes (if you want to run multiple on same machine)
+  # spark-node-2:
+  #   build: .
+  #   container_name: spark-node-2
+  #   network_mode: host
+  #   environment:
+  #     - PARALLAX_HOST=${PARALLAX_HOST:-192.168.0.99}
+
+# Usage:
+# 1. Set your host IP:
+#    export PARALLAX_HOST=192.168.0.99
+#
+# 2. Build and run:
+#    docker-compose up --build
+#
+# 3. Or run in background:
+#    docker-compose up -d --build
+#
+# 4. View logs:
+#    docker-compose logs -f
+#
+# 5. Stop:
+#    docker-compose down

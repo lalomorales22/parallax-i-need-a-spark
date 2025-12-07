@@ -165,6 +165,8 @@ async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--voice", default="en-US-AriaNeural")
     parser.add_argument("--wake-word", default=None) # Future implementation
+    parser.add_argument("--system-prompt", default=None, help="Custom system prompt for the AI")
+    parser.add_argument("--name", default="Spark", help="Name of the AI assistant")
     args = parser.parse_args()
 
     recognizer = sr.Recognizer()
@@ -177,11 +179,19 @@ async def main():
         log("Make sure a microphone is connected and permissions are granted")
         return
     
+    # Build system prompt from args or use default
+    if args.system_prompt:
+        system_prompt = args.system_prompt
+        log(f"Using custom system prompt for {args.name}")
+    else:
+        system_prompt = f"You are {args.name}, a helpful and witty AI assistant. Keep your answers concise and conversational."
+        log(f"Using default system prompt for {args.name}")
+    
     history = [
-        {"role": "system", "content": "You are Spark, a helpful and witty AI assistant. Keep your answers concise and conversational."}
+        {"role": "system", "content": system_prompt}
     ]
 
-    log("Voice Assistant Initialized")
+    log(f"Voice Assistant '{args.name}' Initialized")
     
     # Adjust for ambient noise once at startup
     try:

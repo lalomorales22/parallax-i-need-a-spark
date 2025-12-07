@@ -1,12 +1,18 @@
 # Dependencies
 node_modules/
+
+# Python virtual environments
 venv/
 .venv/
+*/venv/
+**/venv/
+parallax/venv/
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
 
-# Parallax SDK (users install themselves)
+# Parallax SDK (users install themselves via install.sh)
 parallax/
 
 # Database (contains user data)
@@ -21,6 +27,7 @@ dist/
 dist-electron/
 out/
 release/
+build/
 
 # Environment files
 .env
@@ -49,3 +56,9 @@ npm-debug.log*
 *.tmp
 *.temp
 p2p.key
+
+# Model cache (too large)
+*.safetensors
+*.bin
+*.gguf
+*.ggml

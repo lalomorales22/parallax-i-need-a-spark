@@ -147,8 +147,17 @@ else
     fi
     PARALLAX_PID=$!
     
+    # Wait briefly for scheduler to start before joining as node
+    echo "Waiting for scheduler to initialize..."
+    sleep 3
+    
+    # Host also joins as a compute node (so no separate client needed!)
+    echo "Host joining cluster as compute node..."
+    parallax join &
+    HOST_NODE_PID=$!
+    
     # Store all background PIDs for cleanup
-    PIDS_TO_KILL="$PARALLAX_PID"
+    PIDS_TO_KILL="$PARALLAX_PID $HOST_NODE_PID"
     
     # Cleanup function
     cleanup() {

@@ -1,0 +1,46 @@
+# Dependencies and build artifacts
+node_modules/
+dist/
+dist-electron/
+release/
+*.db
+.parallax_host
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+parallax/venv/
+.venv/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+
+# Docs (not needed in container)
+*.md
+docs/
+
+# Large model caches (download fresh in container)
+*.safetensors
+*.bin
+*.gguf

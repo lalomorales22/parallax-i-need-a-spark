@@ -293,7 +293,7 @@ app.whenReady().then(() => {
     return "Client process initiated";
   });
 
-  ipcMain.handle('start-voice', (_event) => {
+  ipcMain.handle('start-voice', async (_event) => {
     console.log("Starting Voice Assistant...");
 
     // Stop any existing voice assistant process
@@ -310,6 +310,52 @@ app.whenReady().then(() => {
     }
     const pythonPath = findPythonPath();
     const fs = require('fs');
+
+    // Get personality settings from database
+    const assistantName = getSetting('assistant_name') || 'Spark';
+    const assistantPersonality = getSetting('assistant_personality') || '';
+
+    // Try to get more detailed personality from personalities table
+    const deviceId = getSetting('device_id') || 'local';
+    const personalityRecord = getPersonality(deviceId) as {
+      name?: string;
+      backstory?: string;
+      traits?: string;
+      system_prompt?: string;
+    } | null;
+
+    // Build system prompt from personality settings
+    let systemPrompt = '';
+    if (personalityRecord?.system_prompt) {
+      // Use custom system prompt if set
+      systemPrompt = personalityRecord.system_prompt;
+    } else if (personalityRecord) {
+      // Build from personality fields
+      const parts: string[] = [];
+      parts.push(`You are ${personalityRecord.name || assistantName}, an AI voice assistant.`);
+
+      if (personalityRecord.backstory) {
+        parts.push(`Background: ${personalityRecord.backstory}`);
+      }
+      if (personalityRecord.traits) {
+        parts.push(`Personality traits: ${personalityRecord.traits}`);
+      }
+      if (assistantPersonality) {
+        parts.push(assistantPersonality);
+      }
+
+      parts.push('Keep your responses concise and conversational since this is voice-based interaction.');
+      systemPrompt = parts.join(' ');
+    } else if (assistantPersonality) {
+      // Use simple personality from onboarding
+      systemPrompt = `You are ${assistantName}, an AI voice assistant. ${assistantPersonality} Keep your responses concise and conversational.`;
+    } else {
+      // Default fallback
+      systemPrompt = `You are ${assistantName}, a helpful and witty AI assistant. Keep your answers concise and conversational.`;
+    }
+
+    console.log(`Voice Assistant Name: ${assistantName}`);
+    console.log(`Voice Assistant System Prompt: ${systemPrompt.substring(0, 100)}...`);
 
     // Get host from environment or try to read from .parallax_host file
     let parallaxHost = process.env.PARALLAX_HOST || '';
@@ -351,7 +397,7 @@ app.whenReady().then(() => {
       mode: 'text',
       pythonPath: pythonPath,
       pythonOptions: ['-u'],
-      args: [],
+      args: ['--system-prompt', systemPrompt, '--name', assistantName],
       env: {
         ...process.env,
         PARALLAX_HOST: parallaxHost

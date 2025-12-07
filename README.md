@@ -16,6 +16,8 @@
 
 - 🚀 **Universal Installer** - Single `install.sh` for macOS, Linux, Raspberry Pi with auto-dependency detection
 - 🌐 **Host/Client Scripts** - Easy `run-host.sh` and `run-client.sh` for distributed setup
+- 🤖 **Host Auto-Joins** - Host now automatically joins as a compute node (no separate client needed!)
+- 🐳 **Docker Support** - Run client nodes in Docker containers for consistent cross-OS deployment
 - 🔄 **Cluster Readiness Check** - Host waits for cluster to reach "available" status before launching
 - 🔌 **Smart Client Connection** - Clients fetch scheduler address from host API for reliable P2P joining
 - 🧹 **Port Cleanup** - Automatically kills zombie processes on port 3001 before starting
@@ -141,10 +143,12 @@ The install script will handle the rest!
 Your most powerful machine should be the host (e.g., Mac Mini 24GB, IP 192.168.0.99):
 
 ```bash
-# Auto-configure mode (RECOMMENDED) - skips Parallax web UI
-./run-host.sh              # Expects at least 1 client node
-./run-host.sh -n 2         # Expects exactly 2 client nodes  
-./run-host.sh -n 4         # Expects exactly 4 client nodes
+# Recommended - host auto-joins as a compute node
+./run-host.sh              # Just works! No separate client needed
+
+# With additional client nodes
+./run-host.sh -n 2         # Expects 2 additional client nodes  
+./run-host.sh -n 4         # Expects 4 additional client nodes
 
 # Manual setup mode - opens Parallax web UI at http://192.168.0.99:3001
 ./run-host.sh -n 0
@@ -152,23 +156,26 @@ Your most powerful machine should be the host (e.g., Mac Mini 24GB, IP 192.168.0
 # Use a different model
 ./run-host.sh -m Qwen/Qwen2.5-3B
 
-# Combine options
-./run-host.sh -m Qwen/Qwen2.5-3B -n 2
-
 # What it does:
 # 1. Cleans up any zombie processes on port 3001
 # 2. Activates parallax/venv
 # 3. Starts Parallax scheduler on port 3001 (bound to 0.0.0.0)
-# 4. Waits for cluster to reach "available" status
-# 5. Starts Electron app with SPARK_MODE=host
+# 4. HOST JOINS AS A COMPUTE NODE (new!)
+# 5. Waits for cluster to reach "available" status
+# 6. Starts Electron app with SPARK_MODE=host
 ```
+
+**🤖 Host Auto-Joins as Compute Node (NEW)**
+- Host machine contributes compute power to the cluster
+- No separate client needed on the host machine
+- Just run `./run-host.sh` and the voice assistant is ready!
 
 **💡 Auto-Configure Mode (Default)**
 - Skips the Parallax web UI setup page
 - Cluster auto-configures with sensible defaults
 - **Waits for cluster to be ready** before launching Electron
 - Shows real-time status: `[5/120] Status: waiting (nodes: 0)`
-- Clients can immediately join with `./run-client.sh <HOST_IP>`
+- Additional clients can join with `./run-client.sh <HOST_IP>`
 
 **🌐 Manual Setup Mode (`-n 0`)**
 - Opens Parallax web UI at `http://<HOST_IP>:3001`
@@ -217,13 +224,13 @@ Here's an example home network setup:
 
 | Device | Role | IP | Command |
 |--------|------|-----|---------|
-| Mac Mini (24GB) | **HOST** | 192.168.0.99 | `./run-host.sh -n 4` |
+| Mac Mini (24GB) | **HOST** | 192.168.0.99 | `./run-host.sh` |
 | MacBook Pro M1 | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
-| Raspberry Pi 5 | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
+| Raspberry Pi 5 | Client Node | DHCP | Docker (see below) |
 | Asus T100 (Debian) | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
 | Dell Inspiron (Omarchy) | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
 
-**Note**: The host uses `-n 4` because we're expecting 4 client nodes to join. This prevents the "waiting for nodes" error.
+**Note**: The host now **automatically joins as a compute node**, so you don't need a separate client to start. With just `./run-host.sh`, the Mac Mini runs the scheduler AND contributes compute power.
 
 ### Per-Device Database
 
@@ -232,14 +239,33 @@ Each device maintains its **own SQLite database** (`spark.db`). This means:
 - Settings and preferences are stored locally
 - Databases are NOT synced - this is intentional for privacy and personalization
 
-### Adding Compute Nodes
+### Docker Nodes (Recommended for Linux)
 
-Want more power? Add machines as Parallax nodes:
+For consistent cross-OS deployment, use Docker on client machines:
+
+```bash
+# On client machine with Docker installed:
+export PARALLAX_HOST=192.168.0.99  # Your host's IP
+docker-compose up --build
+
+# Or run directly:
+docker build -t spark-node .
+docker run --network host -e PARALLAX_HOST=192.168.0.99 spark-node
+```
+
+**Benefits of Docker:**
+- Consistent environment across Debian, Ubuntu, Raspberry Pi, Arch
+- No dependency conflicts
+- Easy to update: just `docker-compose pull && docker-compose up`
+
+### Adding Compute Nodes (Native)
+
+Want more power without Docker? Add machines as Parallax nodes:
 
 ```bash
 # On any machine after installing:
 source parallax/venv/bin/activate
-parallax join --host enter.host.ip.address.here  # Join the host's cluster
+parallax join  # Auto-discovers host on local network
 ```
 
 ## Manual Installation
@@ -332,7 +358,10 @@ parallax-i-need-a-spark/
 │   ├── voice_assistant.py   # Voice processing (uses PARALLAX_HOST env var)
 │   ├── network_discovery.py # mDNS device discovery (outputs JSON for Electron)
 │   └── model_manager.py     # Model management
-├── .parallax_host           # Stores host IP for client reconnection (created by run-client.sh)
+├── Dockerfile               # Docker image for client compute nodes
+├── docker-compose.yml       # Easy Docker orchestration
+├── docker-entrypoint.sh     # Docker container startup script
+├── .parallax_host           # Stores host IP for client reconnection
 ├── package.json
 ├── vite.config.ts
 └── README.md
@@ -346,11 +375,14 @@ parallax-i-need-a-spark/
 # Installation & Setup
 ./install.sh              # Install everything (deps, Parallax, npm, electron-rebuild)
 
-# Running
-./run-host.sh             # Start as HOST with Parallax scheduler
+# Running (Native)
+./run-host.sh             # Start as HOST (scheduler + node + voice assistant)
 ./run-client.sh <IP>      # Start as CLIENT, connect to host at <IP>
-./run-client.sh <IP> --port 3005  # Use custom port if 3000 is busy
 ./run.sh                  # Standalone mode (no Parallax)
+
+# Running (Docker - for client nodes)
+export PARALLAX_HOST=192.168.0.99  # Your host's IP
+docker-compose up --build          # Build and run as Docker client
 
 # Development
 npm run dev               # Start in development mode
