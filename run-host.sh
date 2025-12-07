@@ -51,8 +51,8 @@ else
     echo "Scheduler will be available at: http://$LOCAL_IP:3001"
     echo ""
     
-    # Start Parallax in background
-    parallax run --model "$MODEL" --host 0.0.0.0 &
+    # Start Parallax in background (Explicitly set port 3001)
+    parallax run --model "$MODEL" --host 0.0.0.0 --port 3001 &
     PARALLAX_PID=$!
     
     # Wait for Parallax to start
