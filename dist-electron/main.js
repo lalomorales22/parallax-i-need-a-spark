@@ -14586,6 +14586,13 @@ require$$1$4.app.whenReady().then(() => {
   });
   require$$1$4.ipcMain.handle("start-voice", (_event) => {
     console.log("Starting Voice Assistant...");
+    if (voiceAssistantProcess) {
+      try {
+        voiceAssistantProcess.kill();
+      } catch (e) {
+      }
+      voiceAssistantProcess = null;
+    }
     let scriptPath = path$m.join(__dirname, "../python_bridge/voice_assistant.py");
     if (require$$1$4.app.isPackaged) {
       scriptPath = path$m.join(process.resourcesPath, "python_bridge/voice_assistant.py");
@@ -14620,7 +14627,7 @@ require$$1$4.app.whenReady().then(() => {
     }
     console.log(`Voice Assistant using Python: ${pythonPath}`);
     console.log(`Voice Assistant connecting to Parallax at: ${parallaxHost}:3001`);
-    let pyshell = new PythonShell_1(scriptPath, {
+    voiceAssistantProcess = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,
       pythonOptions: ["-u"],
@@ -14630,7 +14637,7 @@ require$$1$4.app.whenReady().then(() => {
         PARALLAX_HOST: parallaxHost
       }
     });
-    pyshell.on("message", function(message) {
+    voiceAssistantProcess.on("message", function(message) {
       console.log(message);
       if (message.startsWith("STATE:")) {
         win == null ? void 0 : win.webContents.send("state-update", message.replace("STATE:", ""));
@@ -14640,19 +14647,31 @@ require$$1$4.app.whenReady().then(() => {
         win == null ? void 0 : win.webContents.send("log-update", message);
       }
     });
-    pyshell.end(function(err) {
+    voiceAssistantProcess.end(function(err) {
       if (err) {
         console.error("Voice Assistant Error:", err);
         win == null ? void 0 : win.webContents.send("log-update", `ERROR: ${err.message}`);
       }
       win == null ? void 0 : win.webContents.send("log-update", "Voice Assistant terminated.");
       win == null ? void 0 : win.webContents.send("state-update", "IDLE");
+      voiceAssistantProcess = null;
     });
     return "Voice Assistant initiated";
+  });
+  require$$1$4.ipcMain.handle("stop-voice", () => {
+    if (voiceAssistantProcess) {
+      voiceAssistantProcess.kill();
+      voiceAssistantProcess = null;
+      win == null ? void 0 : win.webContents.send("log-update", "Voice Assistant stopped.");
+      win == null ? void 0 : win.webContents.send("state-update", "IDLE");
+      return "Voice Assistant stopped";
+    }
+    return "No voice assistant running";
   });
   require$$1$4.ipcMain.handle("close-app", () => {
     require$$1$4.app.quit();
   });
+  let voiceAssistantProcess = null;
   let networkDiscoveryProcess = null;
   require$$1$4.ipcMain.handle("start-network-discovery", (_event, deviceName, role, _personality, _model) => {
     console.log("Starting Network Discovery...");

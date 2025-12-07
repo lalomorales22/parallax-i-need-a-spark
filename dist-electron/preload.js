@@ -27,6 +27,7 @@ try {
     startHost: () => electron.ipcRenderer.invoke("start-host"),
     startClient: () => electron.ipcRenderer.invoke("start-client"),
     startVoice: () => electron.ipcRenderer.invoke("start-voice"),
+    stopVoice: () => electron.ipcRenderer.invoke("stop-voice"),
     closeApp: () => electron.ipcRenderer.invoke("close-app"),
     // Network Discovery
     startNetworkDiscovery: (deviceName, role, personality, model) => electron.ipcRenderer.invoke("start-network-discovery", deviceName, role, personality, model),

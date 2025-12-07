@@ -89,6 +89,25 @@ function App() {
     };
   }, []);
 
+  // Spacebar listener for quick speak
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only respond to spacebar when not in an input field
+      if (e.code === 'Space' && !autoListen) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          // Toggle auto-listen on
+          setAutoListen(true);
+          handleStartVoice();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [autoListen]);
+
   const handleOnboardingComplete = async (config: {
     name: string;
     personality: string;
@@ -390,9 +409,14 @@ function App() {
       {/* Auto Listen Toggle */}
       <button
         onClick={() => {
-          setAutoListen(!autoListen);
-          if (!autoListen) {
+          const newAutoListen = !autoListen;
+          setAutoListen(newAutoListen);
+          if (newAutoListen) {
+            // Starting voice assistant
             handleStartVoice();
+          } else {
+            // Stopping voice assistant
+            handleStopVoice();
           }
         }}
         style={{
@@ -417,7 +441,7 @@ function App() {
           animation: autoListen ? 'pulse 2s ease-in-out infinite' : 'none'
         }}
       >
-        {autoListen ? '🎤 LISTENING...' : '🎤 TAP TO SPEAK'}
+        {autoListen ? '🎤 LISTENING...' : '⌨️ SPACE TO SPEAK'}
       </button>
 
       <style>{`
