@@ -20,6 +20,7 @@ spark.db
 dist/
 dist-electron/
 out/
+release/
 
 # Environment files
 .env
