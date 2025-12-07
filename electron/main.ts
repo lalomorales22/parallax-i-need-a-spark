@@ -244,6 +244,31 @@ app.whenReady().then(() => {
       console.log(`Using PARALLAX_HOST from env: ${schedulerAddr}`);
     }
 
+    if (!schedulerAddr || schedulerAddr === 'localhost') {
+      const fs = require('fs');
+      // Try multiple possible locations for .parallax_host file
+      const possiblePaths = [
+        path.join(__dirname, '..', '.parallax_host'),
+        path.join(app.getAppPath(), '.parallax_host'),
+        path.join(process.cwd(), '.parallax_host'),
+      ];
+
+      for (const hostFilePath of possiblePaths) {
+        try {
+          if (fs.existsSync(hostFilePath)) {
+            const hostFromFile = fs.readFileSync(hostFilePath, 'utf8').trim();
+            if (hostFromFile && hostFromFile !== 'localhost') {
+              schedulerAddr = hostFromFile;
+              console.log(`Read schedulerAddr from ${hostFilePath}: ${schedulerAddr}`);
+              break;
+            }
+          }
+        } catch (e) {
+          console.log(`Could not read ${hostFilePath}`);
+        }
+      }
+    }
+
     let pyshell = new PythonShell(scriptPath, {
       mode: 'text',
       pythonPath: pythonPath,

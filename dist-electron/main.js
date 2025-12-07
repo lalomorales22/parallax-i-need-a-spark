@@ -14542,6 +14542,28 @@ require$$1$4.app.whenReady().then(() => {
       schedulerAddr = process.env.PARALLAX_HOST;
       console.log(`Using PARALLAX_HOST from env: ${schedulerAddr}`);
     }
+    if (!schedulerAddr || schedulerAddr === "localhost") {
+      const fs2 = require("fs");
+      const possiblePaths = [
+        path$m.join(__dirname, "..", ".parallax_host"),
+        path$m.join(require$$1$4.app.getAppPath(), ".parallax_host"),
+        path$m.join(process.cwd(), ".parallax_host")
+      ];
+      for (const hostFilePath of possiblePaths) {
+        try {
+          if (fs2.existsSync(hostFilePath)) {
+            const hostFromFile = fs2.readFileSync(hostFilePath, "utf8").trim();
+            if (hostFromFile && hostFromFile !== "localhost") {
+              schedulerAddr = hostFromFile;
+              console.log(`Read schedulerAddr from ${hostFilePath}: ${schedulerAddr}`);
+              break;
+            }
+          }
+        } catch (e) {
+          console.log(`Could not read ${hostFilePath}`);
+        }
+      }
+    }
     let pyshell = new PythonShell_1(scriptPath, {
       mode: "text",
       pythonPath,

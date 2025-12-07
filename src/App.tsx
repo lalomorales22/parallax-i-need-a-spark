@@ -46,18 +46,26 @@ function App() {
           }
         }
 
-        // Auto-start network discovery if SPARK_MODE is set
+        // Auto-start network discovery AND Parallax processes if SPARK_MODE is set
         try {
           const sparkMode = await window.ipcRenderer.invoke('get-spark-mode');
           if (sparkMode === 'host' || sparkMode === 'client') {
-            console.log(`Auto-starting network discovery as ${sparkMode}...`);
+            console.log(`Auto-starting services as ${sparkMode}...`);
             const personality = await window.ipcRenderer.getSetting('assistant_personality') || '';
             const model = await window.ipcRenderer.getSetting('model') || 'Qwen/Qwen3-0.6B';
+
+            // Start Network Discovery
             await window.ipcRenderer.startNetworkDiscovery(name || 'Spark', sparkMode, personality, model);
             console.log('Network discovery started automatically');
+
+            // Start Parallax Process (Client only - Host is handled by run-host.sh)
+            if (sparkMode === 'client') {
+              const res = await window.ipcRenderer.startClient();
+              setLogs(prev => [...prev, res]);
+            }
           }
         } catch (e) {
-          console.error('Failed to auto-start network discovery:', e);
+          console.error('Failed to auto-start services:', e);
         }
       }
       setLoading(false);
