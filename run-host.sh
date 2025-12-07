@@ -44,15 +44,42 @@ else
     echo "Starting Parallax scheduler..."
     echo ""
     
-    # Default model - can be overridden with argument
-    MODEL="${1:-Qwen/Qwen3-0.6B}"
+    # Parse arguments
+    MODEL="Qwen/Qwen3-0.6B"
+    NUM_NODES=""
+    
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -m|--model)
+                MODEL="$2"
+                shift 2
+                ;;
+            -n|--nodes)
+                NUM_NODES="$2"
+                shift 2
+                ;;
+            *)
+                MODEL="$1"
+                shift
+                ;;
+        esac
+    done
     
     echo "Model: $MODEL"
+    if [ -n "$NUM_NODES" ]; then
+        echo "Expected nodes: $NUM_NODES"
+    fi
     echo "Scheduler will be available at: http://$LOCAL_IP:3001"
+    echo ""
+    echo "💡 Tip: Clients should run './run-client.sh $LOCAL_IP' to join"
     echo ""
     
     # Start Parallax in background (Explicitly set port 3001)
-    parallax run --model "$MODEL" --host 0.0.0.0 --port 3001 &
+    if [ -n "$NUM_NODES" ]; then
+        parallax run --model "$MODEL" --host 0.0.0.0 --port 3001 -n "$NUM_NODES" &
+    else
+        parallax run --model "$MODEL" --host 0.0.0.0 --port 3001 &
+    fi
     PARALLAX_PID=$!
     
     # Wait for Parallax to start

@@ -138,23 +138,35 @@ The install script will handle the rest!
 Your most powerful machine should be the host (e.g., Mac Mini 24GB, IP 192.168.0.99):
 
 ```bash
-# Easy way - uses run-host.sh script
+# Basic usage - auto-detects and uses default model
 ./run-host.sh
+
+# Specify expected number of client nodes (recommended for multi-device setup)
+./run-host.sh -n 4  # Wait for 4 client nodes before going 'available'
+
+# Use a different model
+./run-host.sh -m Qwen/Qwen2.5-3B
+
+# Combine options
+./run-host.sh -m Qwen/Qwen2.5-3B -n 4
 
 # What it does:
 # 1. Activates parallax/venv
-# 2. Starts Parallax scheduler with Qwen3-0.6B
-# 3. Starts Electron app with SPARK_MODE=host
+# 2. Starts Parallax scheduler on port 3001
+# 3. Waits for specified number of nodes to join (if -n flag used)
+# 4. Starts Electron app with SPARK_MODE=host
 ```
 
-The host runs the Parallax scheduler on port 3001 and accepts client connections on port 3000.
+**💡 Tip**: Use the `-n` flag to specify how many client nodes you expect. The scheduler will wait for all nodes to join before becoming "available". This prevents premature inference attempts.
+
+The host runs the Parallax scheduler on port 3001 and accepts node connections.
 
 ## Running as CLIENT (Other Machines)
 
 On your other devices (laptops, Raspberry Pis, etc.):
 
 ```bash
-# Connect to host at 192.168.0.99
+# Connect to host at 192.168.0.99 (replace with your host's IP)
 ./run-client.sh 192.168.0.99
 
 # Or run without argument - it will prompt for host IP and save it
@@ -164,13 +176,17 @@ On your other devices (laptops, Raspberry Pis, etc.):
 ./run-client.sh 192.168.0.99 --port 3005
 ```
 
-The client will:
-1. Save the host IP to `.parallax_host` for future sessions
-2. Join the Parallax cluster as a compute node
-3. Start the Electron app with `SPARK_MODE=client` and `PARALLAX_HOST` env var
-4. Send AI requests to the host's scheduler
+**What happens when you run the client:**
 
-**Tip:** The dashboard shows your current mode (green = HOST, purple = CLIENT)
+1. ✅ Saves the host IP to `.parallax_host` for future sessions
+2. ✅ **Joins the Parallax cluster** as a compute node using `parallax join`
+3. ✅ Waits for successful connection to the scheduler
+4. ✅ Starts the Electron app with `SPARK_MODE=client`
+5. ✅ The local node processes inference requests from the host
+
+**Important**: The client script now actually **joins the Parallax cluster** as a worker node. This is separate from just running the Electron UI - it makes your device contribute compute power to the distributed AI cluster.
+
+**Tip:** The dashboard shows your current mode (🟢 = HOST, 🟣 = CLIENT)
 
 ## Multi-Device Setup Guide
 
@@ -178,10 +194,13 @@ Here's an example home network setup:
 
 | Device | Role | IP | Command |
 |--------|------|-----|---------|
-| Mac Mini (24GB) | **HOST** | 192.168.0.99 | `./run-host.sh` |
-| MacBook Pro M1 | Client | DHCP | `./run-client.sh enter.host.ip.address.here` |
-| Raspberry Pi 5 | Client | DHCP | `./run-client.sh enter.host.ip.address.here` |
-| Linux Laptop | Client | DHCP | `./run-client.sh enter.host.ip.address.here --port 3005` |
+| Mac Mini (24GB) | **HOST** | 192.168.0.99 | `./run-host.sh -n 4` |
+| MacBook Pro M1 | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
+| Raspberry Pi 5 | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
+| Asus T100 (Debian) | Client Node | DHCP | `./run-client.sh 192.168.0.99` |
+| Dell Inspiron (Omarchy) | Client Node | DHCP | `./run-client.sh 192.168.0.99 --port 3005` |
+
+**Note**: The host uses `-n 4` because we're expecting 4 client nodes to join. This prevents the "waiting for nodes" error.
 
 ### Per-Device Database
 
